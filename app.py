@@ -89,6 +89,10 @@ def generate_otp():
 def send_otp_email(email, fullname, login_id, otp):
     """Send OTP verification email to new user"""
     try:
+        print(f"📧 Attempting to send email to: {email}")
+        print(f"📧 MAIL_USERNAME: {app.config.get('MAIL_USERNAME')}")
+        print(f"📧 MAIL_SERVER: {app.config.get('MAIL_SERVER')}:{app.config.get('MAIL_PORT')}")
+        
         msg = Message(
             subject='Dayflow HRMS - Email Verification',
             recipients=[email]
@@ -137,9 +141,12 @@ def send_otp_email(email, fullname, login_id, otp):
         '''
         
         mail.send(msg)
+        print(f"✅ Email sent successfully to {email}")
         return True
     except Exception as e:
-        print(f"Email sending failed: {e}")
+        print(f"❌ Email sending failed: {str(e)}")
+        import traceback
+        traceback.print_exc()
         return False
 
 
@@ -523,16 +530,10 @@ def login():
             session['role'] = user.role
             session['is_first_login'] = user.is_first_login
             
-            # NEW FLOW: Check email verification status first
-            if not user.email_verified:
-                # User needs to verify email with OTP
-                flash('Please verify your email to continue.', 'warning')
-                return redirect(url_for('verify_otp'))
-            
-            # Check if first login - requires password setup (after OTP verification)
+            # Check if first login - requires password setup
             if user.is_first_login:
-                flash('Please set your secure password.', 'warning')
-                return redirect(url_for('set_new_password'))
+                flash('Welcome! Please change your password for security.', 'warning')
+                return redirect(url_for('change_password'))
             
             flash('Login successful!', 'success')
             
@@ -594,33 +595,22 @@ def signup():
                 role=role,
                 year_of_joining=year_of_joining,
                 is_first_login=True,
-                email_verified=False  # Requires OTP verification
+                email_verified=True  # OTP verification disabled
             )
             user.set_password(temp_password)
-            user.set_otp(otp)  # Set OTP with expiration
             
             try:
                 db.session.add(user)
                 db.session.commit()
                 
-                # Send OTP email to new user
-                email_sent = send_otp_email(email, fullname, login_id, otp)
+                # Store credentials in session to display
+                session['new_user_login_id'] = login_id
+                session['new_user_temp_password'] = temp_password
+                session['new_user_fullname'] = fullname
+                session['new_user_email'] = email
                 
-                if email_sent:
-                    # Store credentials in session to display (NO OTP - that's in email)
-                    session['new_user_login_id'] = login_id
-                    session['new_user_temp_password'] = temp_password
-                    session['new_user_fullname'] = fullname
-                    session['new_user_email'] = email
-                    
-                    flash(f'{role} account created successfully! OTP sent to {email}', 'success')
-                    return redirect(url_for('user_created'))
-                else:
-                    flash(f'{role} account created, but email failed to send. Please contact administrator.', 'warning')
-                    session['new_user_login_id'] = login_id
-                    session['new_user_temp_password'] = temp_password
-                    session['new_user_fullname'] = fullname
-                    return redirect(url_for('user_created'))
+                flash(f'{role} account created successfully!', 'success')
+                return redirect(url_for('user_created'))
                     
             except Exception as e:
                 db.session.rollback()

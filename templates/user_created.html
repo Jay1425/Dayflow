@@ -41,20 +41,6 @@
                 </div>
             </div>
 
-            <!-- Email OTP Notice -->
-            <div class="bg-blue-500/10 border border-blue-500/30 rounded-lg p-4 mb-4">
-                <div class="flex items-start">
-                    <i class="fas fa-envelope text-blue-400 text-xl mr-3 mt-1"></i>
-                    <div>
-                        <h3 class="text-blue-200 font-semibold mb-1">Email OTP Sent</h3>
-                        <p class="text-blue-100 text-sm">
-                            A 6-digit verification code has been sent to <strong>{{ email }}</strong>. 
-                            The user must verify their email before setting a secure password.
-                        </p>
-                    </div>
-                </div>
-            </div>
-
             <!-- Important Notice -->
             <div class="bg-yellow-500/10 border border-yellow-500/30 rounded-lg p-4 mb-6">
                 <div class="flex items-start">
@@ -62,11 +48,9 @@
                     <div>
                         <h3 class="text-yellow-200 font-semibold mb-1">Important</h3>
                         <ul class="text-yellow-100 text-sm space-y-1">
-                            <li>• User must verify email with OTP first</li>
-                            <li>• Then set a secure password (min 8 chars, uppercase, lowercase, number, special char)</li>
-                            <li>• This temporary password is only for the first login</li>
-                            <li>• OTP expires in 10 minutes</li>
-                            <li>• Please share the temporary password securely with the user</li>
+                            <li>• User must change password on first login</li>
+                            <li>• This temporary password will not be shown again</li>
+                            <li>• Please share these credentials securely with the user</li>
                         </ul>
                     </div>
                 </div>
