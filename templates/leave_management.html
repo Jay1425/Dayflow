@@ -1,0 +1,324 @@
+{% extends 'base.html' %}
+
+{% block title %}Leave Management - Dayflow{% endblock %}
+
+{% block content %}
+<div class="min-h-screen">
+    
+    <!-- Header -->
+    <div class="bg-gradient-to-br from-white/10 to-white/5 backdrop-blur-xl border-b border-white/10 shadow-lg glass-highlight">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+            <div class="flex items-center justify-between">
+                <div>
+                    <h1 class="text-2xl font-bold text-white">Leave Management</h1>
+                    <p class="text-sm text-gray-400 mt-1">Review and manage employee leave requests</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Tabs for filtering -->
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+        <div class="flex gap-2 bg-white/10 backdrop-blur-lg rounded-lg p-2 shadow-lg border border-white/20 w-fit">
+        <button onclick="filterLeaves('all')" id="tab-all" class="tab-btn px-6 py-2 rounded-lg font-semibold transition-all duration-300 bg-gradient-to-r from-primary-600 to-accent-600 text-white shadow-md">
+            All Requests
+        </button>
+        <button onclick="filterLeaves('Pending')" id="tab-pending" class="tab-btn px-6 py-2 rounded-lg font-semibold transition-all duration-300 text-gray-300 hover:bg-white/10">
+            Pending
+        </button>
+        <button onclick="filterLeaves('Approved')" id="tab-approved" class="tab-btn px-6 py-2 rounded-lg font-semibold transition-all duration-300 text-gray-300 hover:bg-white/10">
+            Approved
+        </button>
+        <button onclick="filterLeaves('Rejected')" id="tab-rejected" class="tab-btn px-6 py-2 rounded-lg font-semibold transition-all duration-300 text-gray-300 hover:bg-white/10">
+            Rejected
+        </button>
+    </div>
+
+    <!-- Leave Requests List -->
+    <div class="bg-gradient-to-br from-white/10 to-white/5 backdrop-blur-xl border border-white/10 shadow-lg rounded-2xl p-6 glass-highlight">
+        
+        {% if leaves %}
+            <div class="space-y-4" id="leaveList">
+                {% for leave, employee in leaves %}
+                <div class="leave-card bg-white/5 backdrop-blur-sm rounded-xl p-6 border border-white/20 hover:bg-white/10 transition-all duration-300" data-status="{{ leave.status }}">
+                    <div class="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-6">
+                        
+                        <!-- Employee & Leave Details -->
+                        <div class="flex-1">
+                            <!-- Employee Info -->
+                            <div class="flex items-center gap-4 mb-4">
+                                <div class="w-12 h-12 bg-gradient-to-br from-purple-500 to-blue-500 rounded-full flex items-center justify-center text-white font-bold text-lg shadow-lg">
+                                    {{ employee.fullname[:2].upper() }}
+                                </div>
+                                <div>
+                                    <h3 class="text-lg font-bold text-white">{{ employee.fullname }}</h3>
+                                    <p class="text-sm text-gray-400">{{ employee.login_id }} • {{ employee.role }}</p>
+                                </div>
+                            </div>
+
+                            <!-- Leave Details -->
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                                <div class="bg-white/5 rounded-lg p-3">
+                                    <p class="text-xs font-semibold text-gray-400 mb-1">LEAVE TYPE</p>
+                                    <p class="text-sm font-bold text-white">
+                                        {% if leave.leave_type == 'Paid Leave' %}
+                                            💰 Paid Leave
+                                        {% elif leave.leave_type == 'Sick Leave' %}
+                                            🏥 Sick Leave
+                                        {% elif leave.leave_type == 'Unpaid Leave' %}
+                                            📋 Unpaid Leave
+                                        {% endif %}
+                                    </p>
+                                </div>
+                                <div class="bg-white/5 rounded-lg p-3">
+                                    <p class="text-xs font-semibold text-gray-400 mb-1">DURATION</p>
+                                    <p class="text-sm font-bold text-white">{{ leave.total_days }} day{% if leave.total_days > 1 %}s{% endif %}</p>
+                                </div>
+                            </div>
+
+                            <div class="bg-white/5 rounded-lg p-3 mb-4">
+                                <p class="text-xs font-semibold text-gray-400 mb-1">DATE RANGE</p>
+                                <p class="text-sm font-bold text-white">
+                                    {{ leave.start_date.strftime('%d %b %Y') }} - {{ leave.end_date.strftime('%d %b %Y') }}
+                                </p>
+                            </div>
+
+                            <div class="bg-blue-500/10 rounded-lg p-3 mb-3">
+                                <p class="text-xs font-semibold text-blue-300 mb-1">REASON</p>
+                                <p class="text-sm text-gray-300">{{ leave.reason }}</p>
+                            </div>
+
+                            <p class="text-xs text-gray-500">
+                                Applied on {{ leave.applied_on.strftime('%d %b %Y at %I:%M %p') }}
+                            </p>
+
+                            <!-- Admin Comment (if exists) -->
+                            {% if leave.admin_comment %}
+                                <div class="mt-3 p-3 {% if leave.status == 'Rejected' %}bg-red-500/10 border-l-4 border-red-400{% else %}bg-green-500/10 border-l-4 border-green-400{% endif %} rounded-lg">
+                                    <p class="text-xs font-semibold {% if leave.status == 'Rejected' %}text-red-300{% else %}text-green-300{% endif %} mb-1">
+                                        ADMIN COMMENT
+                                    </p>
+                                    <p class="text-sm {% if leave.status == 'Rejected' %}text-red-200{% else %}text-green-200{% endif %}">
+                                        {{ leave.admin_comment }}
+                                    </p>
+                                </div>
+                            {% endif %}
+                        </div>
+
+                        <!-- Status & Actions -->
+                        <div class="flex-shrink-0 flex flex-col items-center gap-3" style="min-width: 200px;">
+                            <!-- Status Badge -->
+                            {% if leave.status == 'Pending' %}
+                                <div class="inline-flex items-center gap-2 px-4 py-2 bg-yellow-100 text-yellow-800 rounded-xl font-semibold w-full justify-center">
+                                    <span class="w-2 h-2 bg-yellow-500 rounded-full animate-pulse"></span>
+                                    Pending Review
+                                </div>
+                            {% elif leave.status == 'Approved' %}
+                                <div class="inline-flex items-center gap-2 px-4 py-2 bg-green-100 text-green-800 rounded-xl font-semibold w-full justify-center">
+                                    <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+                                        <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/>
+                                    </svg>
+                                    Approved
+                                </div>
+                            {% elif leave.status == 'Rejected' %}
+                                <div class="inline-flex items-center gap-2 px-4 py-2 bg-red-100 text-red-800 rounded-xl font-semibold w-full justify-center">
+                                    <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+                                        <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd"/>
+                                    </svg>
+                                    Rejected
+                                </div>
+                            {% endif %}
+
+                            <!-- Action Buttons (Only for Pending) -->
+                            {% if leave.status == 'Pending' %}
+                                <div class="w-full space-y-2">
+                                    <button onclick="approveLeave({{ leave.id }})" 
+                                            class="w-full px-4 py-2 bg-green-600 text-white font-semibold rounded-xl hover:bg-green-700 transition-all duration-300 shadow-md hover:shadow-lg">
+                                        ✓ Approve
+                                    </button>
+                                    <button onclick="rejectLeave({{ leave.id }})" 
+                                            class="w-full px-4 py-2 bg-red-600 text-white font-semibold rounded-xl hover:bg-red-700 transition-all duration-300 shadow-md hover:shadow-lg">
+                                        ✗ Reject
+                                    </button>
+                                </div>
+                            {% endif %}
+                        </div>
+
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        {% else %}
+            <!-- Empty State -->
+            <div class="text-center py-16">
+                <div class="inline-flex items-center justify-center w-20 h-20 bg-primary-500/20 rounded-full mb-4">
+                    <svg class="w-10 h-10 text-primary-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+                    </svg>
+                </div>
+                <h3 class="text-xl font-bold text-white mb-2">No Leave Requests</h3>
+                <p class="text-gray-400">There are no leave requests from employees yet.</p>
+            </div>
+        {% endif %}
+
+    </div>
+    </div>
+
+</div>
+
+<!-- Approve Modal -->
+<div id="approveModal" class="hidden fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+    <div class="bg-gradient-to-br from-white/10 to-white/5 backdrop-blur-xl border border-white/10 rounded-2xl shadow-2xl max-w-md w-full p-6 glass-highlight">
+        <h3 class="text-xl font-bold text-white mb-4">Approve Leave Request</h3>
+        <p class="text-gray-400 mb-4">You can optionally add a comment for this approval.</p>
+        <textarea id="approveComment" rows="3" placeholder="Add optional comment..." 
+                  class="w-full px-4 py-3 bg-white/10 border border-white/20 text-white placeholder-gray-500 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent resize-none mb-4"></textarea>
+        <div class="flex gap-3">
+            <button onclick="confirmApprove()" 
+                    class="flex-1 px-4 py-2 bg-green-600 text-white font-semibold rounded-lg hover:bg-green-700 transition-all duration-300">
+                Confirm Approval
+            </button>
+            <button onclick="closeApproveModal()" 
+                    class="px-4 py-2 bg-white/10 hover:bg-white/20 text-white font-semibold rounded-lg transition-all duration-300">
+                Cancel
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- Reject Modal -->
+<div id="rejectModal" class="hidden fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+    <div class="bg-gradient-to-br from-white/10 to-white/5 backdrop-blur-xl border border-white/10 rounded-2xl shadow-2xl max-w-md w-full p-6 glass-highlight">
+        <h3 class="text-xl font-bold text-white mb-4">Reject Leave Request</h3>
+        <p class="text-gray-400 mb-4">Please provide a reason for rejecting this request.</p>
+        <textarea id="rejectComment" rows="3" placeholder="Rejection reason (required)..." 
+                  class="w-full px-4 py-3 bg-white/10 border border-white/20 text-white placeholder-gray-500 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-transparent resize-none mb-4"></textarea>
+        <div class="flex gap-3">
+            <button onclick="confirmReject()" 
+                    class="flex-1 px-4 py-2 bg-red-600 text-white font-semibold rounded-lg hover:bg-red-700 transition-all duration-300">
+                Confirm Rejection
+            </button>
+            <button onclick="closeRejectModal()" 
+                    class="px-4 py-2 bg-white/10 hover:bg-white/20 text-white font-semibold rounded-lg transition-all duration-300">
+                Cancel
+            </button>
+        </div>
+    </div>
+</div>
+
+<script>
+    let currentLeaveId = null;
+
+    // Tab filtering
+    function filterLeaves(status) {
+        const cards = document.querySelectorAll('.leave-card');
+        const tabs = document.querySelectorAll('.tab-btn');
+        
+        // Update tab styles
+        tabs.forEach(tab => {
+            tab.classList.remove('bg-gradient-to-r', 'from-primary-600', 'to-accent-600', 'text-white', 'shadow-md');
+            tab.classList.add('text-gray-300', 'hover:bg-white/10');
+        });
+        
+        const activeTab = document.getElementById(`tab-${status === 'all' ? 'all' : status.toLowerCase()}`);
+        if (activeTab) {
+            activeTab.classList.add('bg-gradient-to-r', 'from-primary-600', 'to-accent-600', 'text-white', 'shadow-md');
+            activeTab.classList.remove('text-gray-300', 'hover:bg-white/10');
+        }
+        
+        // Filter cards
+        cards.forEach(card => {
+            if (status === 'all' || card.dataset.status === status) {
+                card.style.display = 'block';
+            } else {
+                card.style.display = 'none';
+            }
+        });
+    }
+
+    // Approve leave
+    function approveLeave(leaveId) {
+        currentLeaveId = leaveId;
+        document.getElementById('approveModal').classList.remove('hidden');
+    }
+
+    function closeApproveModal() {
+        document.getElementById('approveModal').classList.add('hidden');
+        document.getElementById('approveComment').value = '';
+        currentLeaveId = null;
+    }
+
+    function confirmApprove() {
+        const comment = document.getElementById('approveComment').value.trim();
+        
+        fetch(`/leave/approve/${currentLeaveId}`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ comment: comment })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                location.reload();
+            } else {
+                alert(data.message || 'Failed to approve leave request.');
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('An error occurred. Please try again.');
+        });
+    }
+
+    // Reject leave
+    function rejectLeave(leaveId) {
+        currentLeaveId = leaveId;
+        document.getElementById('rejectModal').classList.remove('hidden');
+    }
+
+    function closeRejectModal() {
+        document.getElementById('rejectModal').classList.add('hidden');
+        document.getElementById('rejectComment').value = '';
+        currentLeaveId = null;
+    }
+
+    function confirmReject() {
+        const comment = document.getElementById('rejectComment').value.trim();
+        
+        if (!comment) {
+            alert('Please provide a reason for rejection.');
+            return;
+        }
+        
+        fetch(`/leave/reject/${currentLeaveId}`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ comment: comment })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                location.reload();
+            } else {
+                alert(data.message || 'Failed to reject leave request.');
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('An error occurred. Please try again.');
+        });
+    }
+
+    // Close modals on ESC key
+    document.addEventListener('keydown', function(e) {
+        if (e.key === 'Escape') {
+            closeApproveModal();
+            closeRejectModal();
+        }
+    });
+</script>
+{% endblock %}

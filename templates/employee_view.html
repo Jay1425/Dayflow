@@ -1,0 +1,165 @@
+{% extends "base.html" %}
+
+{% block title %}{{ employee.fullname }} - Employee Profile{% endblock %}
+
+{% block content %}
+<div class="min-h-screen">
+    <!-- Header -->
+    <div class="bg-gradient-to-br from-white/10 to-white/5 backdrop-blur-xl border-b border-white/10 shadow-lg glass-highlight">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+            <div class="flex items-center space-x-4">
+                <a href="{{ url_for('employees') }}" 
+                   class="p-2 rounded-lg hover:bg-white/10 transition-colors">
+                    <i class="fas fa-arrow-left text-white"></i>
+                </a>
+                <div>
+                    <h1 class="text-2xl font-bold text-white">Employee Profile</h1>
+                    <p class="text-sm text-gray-400">View Only</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Profile Content -->
+    <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <div class="rounded-2xl p-8 bg-gradient-to-br from-white/10 to-white/5 backdrop-blur-xl border border-white/10 shadow-lg glass-highlight">
+            <!-- Avatar & Status -->
+            <div class="flex items-center justify-between mb-8">
+                <div class="flex items-center space-x-6">
+                    <div class="relative">
+                        <div class="w-24 h-24 rounded-full bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center text-white font-bold text-4xl shadow-lg">
+                            {{ employee.fullname[0].upper() }}
+                        </div>
+                        <!-- Status Badge -->
+                        <div class="absolute -bottom-1 -right-1">
+                            {% if employee.status == 'present' %}
+                            <div class="px-3 py-1 rounded-full bg-green-500 text-white text-xs font-semibold border-2 border-gray-900">
+                                <i class="fas fa-check mr-1"></i>Present
+                            </div>
+                            {% elif employee.status == 'on_leave' %}
+                            <div class="px-3 py-1 rounded-full bg-blue-500 text-white text-xs font-semibold border-2 border-gray-900">
+                                <i class="fas fa-plane mr-1"></i>On Leave
+                            </div>
+                            {% else %}
+                            <div class="px-3 py-1 rounded-full bg-yellow-500 text-white text-xs font-semibold border-2 border-gray-900">
+                                <i class="fas fa-exclamation mr-1"></i>Absent
+                            </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                    <div>
+                        <h2 class="text-3xl font-bold text-white mb-1">{{ employee.fullname }}</h2>
+                        <p class="text-lg text-gray-400">{{ employee.role }}</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Employee Details -->
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <!-- Login ID -->
+                <div class="space-y-2">
+                    <label class="text-sm font-medium text-gray-400">Login ID</label>
+                    <div class="px-4 py-3 rounded-lg bg-white/5 border border-white/10 text-white font-mono">
+                        {{ employee.login_id }}
+                    </div>
+                </div>
+
+                <!-- Email -->
+                <div class="space-y-2">
+                    <label class="text-sm font-medium text-gray-400">Email Address</label>
+                    <div class="px-4 py-3 rounded-lg bg-white/5 border border-white/10 text-white">
+                        {{ employee.email }}
+                    </div>
+                </div>
+
+                <!-- Role -->
+                <div class="space-y-2">
+                    <label class="text-sm font-medium text-gray-400">Role</label>
+                    <div class="px-4 py-3 rounded-lg bg-white/5 border border-white/10 text-white">
+                        {{ employee.role }}
+                    </div>
+                </div>
+
+                <!-- Year of Joining -->
+                <div class="space-y-2">
+                    <label class="text-sm font-medium text-gray-400">Year of Joining</label>
+                    <div class="px-4 py-3 rounded-lg bg-white/5 border border-white/10 text-white">
+                        {{ employee.year_of_joining }}
+                    </div>
+                </div>
+
+                <!-- Account Created -->
+                <div class="space-y-2">
+                    <label class="text-sm font-medium text-gray-400">Account Created</label>
+                    <div class="px-4 py-3 rounded-lg bg-white/5 border border-white/10 text-white">
+                        {{ employee.created_at.strftime('%B %d, %Y') }}
+                    </div>
+                </div>
+
+                <!-- Current Status -->
+                <div class="space-y-2">
+                    <label class="text-sm font-medium text-gray-400">Attendance Status</label>
+                    <div class="px-4 py-3 rounded-lg bg-white/5 border border-white/10">
+                        {% if employee.status == 'present' %}
+                        <span class="text-green-400 font-semibold">
+                            <i class="fas fa-check-circle mr-2"></i>Present
+                        </span>
+                        {% elif employee.status == 'on_leave' %}
+                        <span class="text-blue-400 font-semibold">
+                            <i class="fas fa-plane-departure mr-2"></i>On Approved Leave
+                        </span>
+                        {% else %}
+                        <span class="text-yellow-400 font-semibold">
+                            <i class="fas fa-exclamation-circle mr-2"></i>Absent
+                        </span>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+
+            <!-- Today's Attendance Details -->
+            {% if employee.check_in_time or employee.check_out_time %}
+            <div class="mt-8 pt-8 border-t border-white/10">
+                <h3 class="text-xl font-semibold text-white mb-4">Today's Attendance</h3>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div class="p-4 rounded-lg bg-green-500/10 border border-green-500/30">
+                        <p class="text-sm text-gray-400 mb-1">Check In Time</p>
+                        <p class="text-2xl font-bold text-green-400">
+                            {{ employee.check_in_time or '—' }}
+                        </p>
+                    </div>
+                    <div class="p-4 rounded-lg bg-blue-500/10 border border-blue-500/30">
+                        <p class="text-sm text-gray-400 mb-1">Check Out Time</p>
+                        <p class="text-2xl font-bold text-blue-400">
+                            {{ employee.check_out_time or '—' }}
+                        </p>
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+
+            <!-- Info Notice -->
+            <div class="mt-8 p-4 rounded-lg bg-blue-500/10 border border-blue-500/30">
+                <div class="flex items-start space-x-3">
+                    <i class="fas fa-info-circle text-blue-400 text-lg mt-0.5"></i>
+                    <div>
+                        <p class="text-blue-200 font-medium mb-1">View-Only Mode</p>
+                        <p class="text-blue-100 text-sm">
+                            This profile is in read-only mode. You cannot edit these details. 
+                            To edit your own profile, click "My Profile" from the user menu.
+                        </p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Actions -->
+            <div class="mt-8 flex justify-between">
+                <a href="{{ url_for('employees') }}" 
+                   class="px-6 py-3 rounded-lg bg-white/10 hover:bg-white/20 text-white font-semibold transition-colors border border-white/10">
+                    <i class="fas fa-arrow-left mr-2"></i>Back to Employees
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

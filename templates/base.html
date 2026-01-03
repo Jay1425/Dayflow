@@ -399,6 +399,14 @@
                             <i class="fas fa-info-circle text-sm opacity-90 group-hover:scale-110 transition-transform"></i>About
                         </a>
                         {% if session.user %}
+                            <!-- Employees -->
+                            <a href="{{ url_for('employees') }}" 
+                               class="group relative inline-flex items-center gap-2 px-4 py-2 rounded-lg border border-transparent text-gray-300 hover:text-white hover:bg-white/10 transition-all duration-300
+                                      after:content-[''] after:absolute after:left-4 after:right-4 after:bottom-1 after:h-0.5 after:origin-left after:scale-x-0 after:bg-gradient-to-r after:from-primary-500 after:to-accent-500 after:transition-transform after:duration-300 hover:after:scale-x-100
+                                      {% if request.endpoint == 'employees' or request.endpoint == 'view_employee' %}text-primary-400 bg-primary-500/15 border-primary-500/20 shadow-lg{% endif %}">
+                                <i class="fas fa-users text-sm opacity-90 group-hover:scale-110 transition-transform"></i>Employees
+                            </a>
+                        
                             <!-- Dashboard Link - Role-based -->
                             {% if session.role == 'Admin' %}
                             <a href="{{ url_for('admin_dashboard') }}" 
@@ -431,13 +439,22 @@
                                 <i class="fas fa-calendar-check text-sm opacity-90 group-hover:scale-110 transition-transform"></i>Attendance
                             </a>
                             
-                            <!-- Leave -->
-                            <a href="{{ url_for('employee_leave') }}" 
+                            <!-- Time Off - Role-based routing -->
+                            {% if session.role in ['Admin', 'HR Officer'] %}
+                            <a href="{{ url_for('leave_management') }}" 
                                class="group relative inline-flex items-center gap-2 px-4 py-2 rounded-lg border border-transparent text-gray-300 hover:text-white hover:bg-white/10 transition-all duration-300
                                       after:content-[''] after:absolute after:left-4 after:right-4 after:bottom-1 after:h-0.5 after:origin-left after:scale-x-0 after:bg-gradient-to-r after:from-primary-500 after:to-accent-500 after:transition-transform after:duration-300 hover:after:scale-x-100
-                                      {% if request.endpoint == 'employee_leave' %}text-primary-400 bg-primary-500/15 border-primary-500/20 shadow-lg{% endif %}">
-                                <i class="fas fa-umbrella-beach text-sm opacity-90 group-hover:scale-110 transition-transform"></i>Leave
+                                      {% if request.endpoint in ['leave_management', 'approve_leave', 'reject_leave'] %}text-primary-400 bg-primary-500/15 border-primary-500/20 shadow-lg{% endif %}">
+                                <i class="fas fa-umbrella-beach text-sm opacity-90 group-hover:scale-110 transition-transform"></i>Time Off
                             </a>
+                            {% else %}
+                            <a href="{{ url_for('my_leave_requests') }}" 
+                               class="group relative inline-flex items-center gap-2 px-4 py-2 rounded-lg border border-transparent text-gray-300 hover:text-white hover:bg-white/10 transition-all duration-300
+                                      after:content-[''] after:absolute after:left-4 after:right-4 after:bottom-1 after:h-0.5 after:origin-left after:scale-x-0 after:bg-gradient-to-r after:from-primary-500 after:to-accent-500 after:transition-transform after:duration-300 hover:after:scale-x-100
+                                      {% if request.endpoint in ['my_leave_requests', 'apply_leave'] %}text-primary-400 bg-primary-500/15 border-primary-500/20 shadow-lg{% endif %}">
+                                <i class="fas fa-umbrella-beach text-sm opacity-90 group-hover:scale-110 transition-transform"></i>Time Off
+                            </a>
+                            {% endif %}
                             
                             <!-- Admin/HR Only - User Management -->
                             {% if session.role in ['Admin', 'HR Officer'] %}
@@ -498,6 +515,11 @@
                     <i class="fas fa-info-circle mr-3 text-primary-400 group-hover:scale-110 transition-transform"></i>About
                 </a>
                 {% if session.user %}
+                    <a href="{{ url_for('employees') }}" 
+                       class="group block px-4 py-3 rounded-xl border-l-4 border-transparent text-gray-300 hover:text-white hover:bg-white/10 transition-all duration-300
+                              {% if request.endpoint == 'employees' or request.endpoint == 'view_employee' %}text-primary-400 bg-primary-500/15 border-primary-500{% endif %}">
+                        <i class="fas fa-users mr-3 text-primary-400 group-hover:scale-110 transition-transform"></i>Employees
+                    </a>
                     <a href="{{ url_for('dashboard') }}" 
                        class="group block px-4 py-3 rounded-xl border-l-4 border-transparent text-gray-300 hover:text-white hover:bg-white/10 transition-all duration-300
                               {% if request.endpoint == 'dashboard' %}text-primary-400 bg-primary-500/15 border-primary-500{% endif %}">
@@ -508,11 +530,19 @@
                               {% if request.endpoint == 'attendance' %}text-primary-400 bg-primary-500/15 border-primary-500{% endif %}">
                         <i class="fas fa-calendar-check mr-3 text-primary-400 group-hover:scale-110 transition-transform"></i>Attendance
                     </a>
-                    <a href="{{ url_for('employee_leave') }}" 
+                    {% if session.role in ['Admin', 'HR Officer'] %}
+                    <a href="{{ url_for('leave_management') }}" 
                        class="group block px-4 py-3 rounded-xl border-l-4 border-transparent text-gray-300 hover:text-white hover:bg-white/10 transition-all duration-300
-                              {% if request.endpoint == 'employee_leave' %}text-primary-400 bg-primary-500/15 border-primary-500{% endif %}">
-                        <i class="fas fa-umbrella-beach mr-3 text-primary-400 group-hover:scale-110 transition-transform"></i>Leave
+                              {% if request.endpoint in ['leave_management', 'approve_leave', 'reject_leave'] %}text-primary-400 bg-primary-500/15 border-primary-500{% endif %}">
+                        <i class="fas fa-umbrella-beach mr-3 text-primary-400 group-hover:scale-110 transition-transform"></i>Time Off
                     </a>
+                    {% else %}
+                    <a href="{{ url_for('my_leave_requests') }}" 
+                       class="group block px-4 py-3 rounded-xl border-l-4 border-transparent text-gray-300 hover:text-white hover:bg-white/10 transition-all duration-300
+                              {% if request.endpoint in ['my_leave_requests', 'apply_leave'] %}text-primary-400 bg-primary-500/15 border-primary-500{% endif %}">
+                        <i class="fas fa-umbrella-beach mr-3 text-primary-400 group-hover:scale-110 transition-transform"></i>Time Off
+                    </a>
+                    {% endif %}
                     <a href="{{ url_for('profile') }}" 
                        class="group block px-4 py-3 rounded-xl border-l-4 border-transparent text-gray-300 hover:text-white hover:bg-white/10 transition-all duration-300
                               {% if request.endpoint == 'profile' %}text-primary-400 bg-primary-500/15 border-primary-500{% endif %}">

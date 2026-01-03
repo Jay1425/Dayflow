@@ -1,0 +1,147 @@
+{% extends 'base.html' %}
+
+{% block title %}My Leave Requests - Dayflow{% endblock %}
+
+{% block content %}
+<div class="min-h-screen">
+    
+    <!-- Header -->
+    <div class="bg-gradient-to-br from-white/10 to-white/5 backdrop-blur-xl border-b border-white/10 shadow-lg glass-highlight">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+            <div class="flex items-center justify-between">
+                <div>
+                    <h1 class="text-2xl font-bold text-white">My Leave Requests</h1>
+                    <p class="text-sm text-gray-400 mt-1">Track the status of your leave applications</p>
+                </div>
+                <a href="{{ url_for('apply_leave') }}" class="px-6 py-3 bg-gradient-to-r from-primary-600 to-accent-600 text-white font-semibold rounded-lg hover:from-primary-700 hover:to-accent-700 transition-all duration-300 shadow-lg hover:shadow-xl">
+                    <i class="fas fa-plus mr-2"></i>Apply for Leave
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Leave Requests List -->
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <div class="bg-gradient-to-br from-white/10 to-white/5 backdrop-blur-xl border border-white/10 shadow-lg rounded-2xl p-6 glass-highlight">
+        
+        {% if leaves %}
+            <div class="space-y-4">
+                {% for leave in leaves %}
+                <div class="bg-white/5 backdrop-blur-sm rounded-xl p-6 border border-white/20 hover:bg-white/10 transition-all duration-300">
+                    <div class="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
+                        
+                        <!-- Leave Details -->
+                        <div class="flex-1">
+                            <div class="flex items-start gap-3">
+                                <!-- Leave Type Icon -->
+                                <div class="flex-shrink-0">
+                                    {% if leave.leave_type == 'Paid Leave' %}
+                                        <div class="w-12 h-12 bg-green-100 rounded-xl flex items-center justify-center">
+                                            <span class="text-2xl">💰</span>
+                                        </div>
+                                    {% elif leave.leave_type == 'Sick Leave' %}
+                                        <div class="w-12 h-12 bg-red-100 rounded-xl flex items-center justify-center">
+                                            <span class="text-2xl">🏥</span>
+                                        </div>
+                                    {% elif leave.leave_type == 'Unpaid Leave' %}
+                                        <div class="w-12 h-12 bg-gray-100 rounded-xl flex items-center justify-center">
+                                            <span class="text-2xl">📋</span>
+                                        </div>
+                                    {% endif %}
+                                </div>
+
+                                <!-- Leave Info -->
+                                <div class="flex-1">
+                                    <h3 class="text-lg font-bold text-white mb-1">{{ leave.leave_type }}</h3>
+                                    <div class="flex flex-wrap items-center gap-3 text-sm text-gray-400 mb-2">
+                                        <span class="flex items-center gap-1">
+                                            <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                                                <path fill-rule="evenodd" d="M6 2a1 1 0 00-1 1v1H4a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V6a2 2 0 00-2-2h-1V3a1 1 0 10-2 0v1H7V3a1 1 0 00-1-1zm0 5a1 1 0 000 2h8a1 1 0 100-2H6z" clip-rule="evenodd"/>
+                                            </svg>
+                                            {{ leave.start_date.strftime('%d %b %Y') }} - {{ leave.end_date.strftime('%d %b %Y') }}
+                                        </span>
+                                        <span class="flex items-center gap-1">
+                                            <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                                                <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-12a1 1 0 10-2 0v4a1 1 0 00.293.707l2.828 2.829a1 1 0 101.415-1.415L11 9.586V6z" clip-rule="evenodd"/>
+                                            </svg>
+                                            {{ leave.total_days }} day{% if leave.total_days > 1 %}s{% endif %}
+                                        </span>
+                                    </div>
+                                    <p class="text-sm text-gray-300 bg-white/5 rounded-lg p-3">
+                                        <span class="font-semibold">Reason:</span> {{ leave.reason }}
+                                    </p>
+                                    <p class="text-xs text-gray-500 mt-2">
+                                        Applied on {{ leave.applied_on.strftime('%d %b %Y at %I:%M %p') }}
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Status Badge -->
+                        <div class="flex-shrink-0 text-center">
+                            {% if leave.status == 'Pending' %}
+                                <div class="inline-flex items-center gap-2 px-4 py-2 bg-yellow-100 text-yellow-800 rounded-xl font-semibold">
+                                    <span class="w-2 h-2 bg-yellow-500 rounded-full animate-pulse"></span>
+                                    Pending
+                                </div>
+                            {% elif leave.status == 'Approved' %}
+                                <div class="inline-flex items-center gap-2 px-4 py-2 bg-green-100 text-green-800 rounded-xl font-semibold">
+                                    <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+                                        <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/>
+                                    </svg>
+                                    Approved
+                                </div>
+                            {% elif leave.status == 'Rejected' %}
+                                <div class="inline-flex items-center gap-2 px-4 py-2 bg-red-100 text-red-800 rounded-xl font-semibold">
+                                    <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+                                        <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd"/>
+                                    </svg>
+                                    Rejected
+                                </div>
+                            {% endif %}
+                        </div>
+
+                    </div>
+
+                    <!-- Admin Comment (for Rejected leaves) -->
+                    {% if leave.status == 'Rejected' and leave.admin_comment %}
+                        <div class="mt-4 p-4 bg-red-500/10 border-l-4 border-red-400 rounded-lg">
+                            <p class="text-sm font-semibold text-red-300 mb-1">Rejection Reason</p>
+                            <p class="text-sm text-red-200">{{ leave.admin_comment }}</p>
+                        </div>
+                    {% endif %}
+
+                    <!-- Admin Comment (for Approved leaves, if any) -->
+                    {% if leave.status == 'Approved' and leave.admin_comment %}
+                        <div class="mt-4 p-4 bg-green-500/10 border-l-4 border-green-400 rounded-lg">
+                            <p class="text-sm font-semibold text-green-300 mb-1">Admin Note</p>
+                            <p class="text-sm text-green-200">{{ leave.admin_comment }}</p>
+                        </div>
+                    {% endif %}
+                </div>
+                {% endfor %}
+            </div>
+        {% else %}
+            <!-- Empty State -->
+            <div class="text-center py-16">
+                <div class="inline-flex items-center justify-center w-20 h-20 bg-primary-500/20 rounded-full mb-4">
+                    <svg class="w-10 h-10 text-primary-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+                    </svg>
+                </div>
+                <h3 class="text-xl font-bold text-white mb-2">No Leave Requests Yet</h3>
+                <p class="text-gray-400 mb-6">You haven't submitted any leave requests.</p>
+                <a href="{{ url_for('apply_leave') }}" class="inline-flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-primary-600 to-accent-600 text-white font-semibold rounded-lg hover:from-primary-700 hover:to-accent-700 transition-all duration-300 shadow-lg hover:shadow-xl">
+                    <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+                        <path fill-rule="evenodd" d="M10 3a1 1 0 011 1v5h5a1 1 0 110 2h-5v5a1 1 0 11-2 0v-5H4a1 1 0 110-2h5V4a1 1 0 011-1z" clip-rule="evenodd"/>
+                    </svg>
+                    Apply for Leave
+                </a>
+            </div>
+        {% endif %}
+
+    </div>
+    </div>
+
+</div>
+{% endblock %}

@@ -261,6 +261,31 @@ class Attendance(db.Model):
 
     __table_args__ = (db.UniqueConstraint('user_id', 'date', name='uq_user_date'),)
 
+    def compute_status(self):
+        if self.check_in and self.check_out:
+            total_minutes = int((self.check_out - self.check_in).total_seconds() // 60)
+            self.duration_minutes = total_minutes
+            if total_minutes >= 8 * 60:
+                self.status = 'Present'
+            elif total_minutes >= 4 * 60:
+                self.status = 'Half Day'
+            else:
+                self.status = 'Short Shift'
+        elif self.check_in and not self.check_out:
+            self.status = 'In Progress'
+        else:
+            self.status = 'Absent'
+        return self.status
+
+    def to_dict(self):
+        return {
+            'date': self.date.isoformat(),
+            'check_in': self.check_in.isoformat() if self.check_in else None,
+            'check_out': self.check_out.isoformat() if self.check_out else None,
+            'status': self.status,
+            'duration_minutes': self.duration_minutes
+        }
+
 
 class Leave(db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -288,32 +313,6 @@ class Leave(db.Model):
             'status': self.status,
             'admin_comment': self.admin_comment,
             'applied_on': self.applied_on.strftime('%b %d, %Y')
-        }
-
-
-    def compute_status(self):
-        if self.check_in and self.check_out:
-            total_minutes = int((self.check_out - self.check_in).total_seconds() // 60)
-            self.duration_minutes = total_minutes
-            if total_minutes >= 8 * 60:
-                self.status = 'Present'
-            elif total_minutes >= 4 * 60:
-                self.status = 'Half Day'
-            else:
-                self.status = 'Short Shift'
-        elif self.check_in and not self.check_out:
-            self.status = 'In Progress'
-        else:
-            self.status = 'Absent'
-        return self.status
-
-    def to_dict(self):
-        return {
-            'date': self.date.isoformat(),
-            'check_in': self.check_in.isoformat() if self.check_in else None,
-            'check_out': self.check_out.isoformat() if self.check_out else None,
-            'status': self.status,
-            'duration_minutes': self.duration_minutes
         }
 
 
@@ -537,13 +536,8 @@ def login():
             
             flash('Login successful!', 'success')
             
-            # Role-based redirect (normal flow for verified users)
-            if user.role == 'Admin':
-                return redirect(url_for('admin_dashboard'))
-            elif user.role == 'HR Officer':
-                return redirect(url_for('hr_dashboard'))
-            else:  # Employee
-                return redirect(url_for('dashboard'))
+            # All users land on Employees page after login
+            return redirect(url_for('employees'))
         else:
             flash('Invalid credentials. Please try again.', 'error')
     
@@ -880,6 +874,82 @@ def unauthorized():
     return render_template('unauthorized.html'), 403
 
 
+def get_employee_status(user_id):
+    """
+    Compute employee attendance status for today
+    Returns: 'present', 'on_leave', or 'absent'
+    """
+    today = date.today()
+    
+    # Check if on approved leave
+    leave = Leave.query.filter(
+        Leave.user_id == user_id,
+        Leave.status == 'Approved',
+        Leave.start_date <= today,
+        Leave.end_date >= today
+    ).first()
+    
+    if leave:
+        return 'on_leave'
+    
+    # Check attendance
+    attendance = Attendance.query.filter_by(user_id=user_id, date=today).first()
+    
+    if attendance and attendance.check_in:
+        return 'present'
+    
+    return 'absent'
+
+
+@app.route('/employees')
+@login_required
+def employees():
+    """Employees directory page - Shows all employees with status indicators"""
+    current_user = User.query.get(session['user_id'])
+    
+    if not current_user:
+        flash('Please login to access this page.', 'error')
+        return redirect(url_for('login'))
+    
+    # Get all users (employees for Employee role, all for Admin/HR)
+    if current_user.role == 'Employee':
+        # Employees can see all employees
+        all_employees = User.query.all()
+    else:
+        # Admin and HR can see everyone
+        all_employees = User.query.all()
+    
+    # Build employee data with status
+    employees_data = []
+    for emp in all_employees:
+        status = get_employee_status(emp.id)
+        
+        # Get today's attendance for check-in info
+        today_attendance = get_today_attendance(emp.id)
+        
+        employees_data.append({
+            'id': emp.id,
+            'fullname': emp.fullname,
+            'login_id': emp.login_id,
+            'email': emp.email,
+            'role': emp.role,
+            'status': status,
+            'check_in_time': today_attendance.check_in.strftime('%I:%M %p') if today_attendance and today_attendance.check_in else None,
+            'is_current_user': emp.id == current_user.id
+        })
+    
+    # Get current user's attendance for check-in/out buttons
+    today_record = get_today_attendance(current_user.id)
+    action_state = build_action_state(today_record)
+    
+    return render_template('employees.html',
+                         user=session['user'],
+                         current_user=current_user,
+                         employees=employees_data,
+                         today_record=today_record,
+                         action_state=action_state)
+
+
 def summarize_attendance(record: Attendance | None):
     if not record:
         return {
@@ -903,7 +973,7 @@ def summarize_attendance(record: Attendance | None):
 @app.route('/attendance')
 @login_required
 def attendance():
-    """Attendance page (requires login)"""
+    """Attendance List View - Role-based (Employee: Monthly | Admin/HR: Daily)"""
     if 'user_id' not in session:
         flash('Please login to access attendance.', 'error')
         return redirect(url_for('login'))
@@ -914,21 +984,254 @@ def attendance():
         flash('User not found. Please login again.', 'error')
         return redirect(url_for('login'))
 
-    today_record = get_today_attendance(user.id)
-    if today_record:
-        today_record.compute_status()
+    # Get query parameters
+    view_date = request.args.get('date')
+    view_month = request.args.get('month')
+    search_query = request.args.get('search', '').strip()
 
-    weekly_overview = build_weekly_overview(user.id)
-    action_state = build_action_state(today_record)
-    summary = summarize_attendance(today_record)
+    # Role-based view logic
+    if user.role in ['Admin', 'HR Officer']:
+        # ADMIN/HR VIEW: Daily view of all employees
+        if view_date:
+            try:
+                target_date = datetime.strptime(view_date, '%Y-%m-%d').date()
+            except ValueError:
+                target_date = date.today()
+        else:
+            target_date = date.today()
 
-    return render_template(
-        'attendance.html',
-        user=session['user'],
-        today_summary=summary,
-        weekly_overview=weekly_overview,
-        action_state=action_state
-    )
+        # Get all employees
+        employees_query = User.query
+        
+        # Apply search filter
+        if search_query:
+            employees_query = employees_query.filter(
+                db.or_(
+                    User.fullname.ilike(f'%{search_query}%'),
+                    User.login_id.ilike(f'%{search_query}%')
+                )
+            )
+        
+        all_employees = employees_query.all()
+
+        # Build attendance data for each employee
+        attendance_data = []
+        for emp in all_employees:
+            record = Attendance.query.filter_by(user_id=emp.id, date=target_date).first()
+            
+            # Check for leave
+            on_leave = Leave.query.filter(
+                Leave.user_id == emp.id,
+                Leave.status == 'Approved',
+                Leave.start_date <= target_date,
+                Leave.end_date >= target_date
+            ).first()
+
+            work_hours = 0
+            extra_hours = 0
+            status = 'Absent'
+            check_in_display = '—'
+            check_out_display = '—'
+            work_hours_display = '—'
+            extra_hours_display = '—'
+
+            if on_leave:
+                status = 'On Leave'
+                check_in_display = 'On Leave'
+            elif record and record.check_in:
+                check_in_display = record.check_in.strftime('%I:%M %p')
+                
+                if record.check_out and record.check_out > record.check_in:
+                    # Both check-in and check-out exist, and check-out is after check-in
+                    check_out_display = record.check_out.strftime('%I:%M %p')
+                    total_minutes = int((record.check_out - record.check_in).total_seconds() / 60)
+                    work_hours = total_minutes / 60
+                    
+                    # Display work hours as "7h 32m"
+                    hours = total_minutes // 60
+                    minutes = total_minutes % 60
+                    work_hours_display = f'{hours}h {minutes}m'
+                    
+                    # Extra hours = hours beyond 8
+                    if work_hours > 8:
+                        extra_hours = work_hours - 8
+                        extra_hours_minutes = int(extra_hours * 60)
+                        extra_h = extra_hours_minutes // 60
+                        extra_m = extra_hours_minutes % 60
+                        extra_hours_display = f'{extra_h}h {extra_m}m'
+                    else:
+                        extra_hours_display = '0h'
+                    
+                    status = 'Present'
+                else:
+                    # Checked in but not checked out yet
+                    check_out_display = '—'
+                    status = 'In Progress'
+
+            attendance_data.append({
+                'employee_name': emp.fullname,
+                'login_id': emp.login_id,
+                'check_in': check_in_display,
+                'check_out': check_out_display,
+                'work_hours': work_hours_display,
+                'extra_hours': extra_hours_display,
+                'status': status
+            })
+
+        return render_template(
+            'attendance_list.html',
+            user=user,
+            view_type='daily',
+            target_date=target_date,
+            attendance_data=attendance_data,
+            search_query=search_query,
+            prev_date=(target_date - timedelta(days=1)).strftime('%Y-%m-%d'),
+            next_date=(target_date + timedelta(days=1)).strftime('%Y-%m-%d')
+        )
+
+    else:
+        # EMPLOYEE VIEW: Monthly view of own attendance
+        if view_month:
+            try:
+                target_month = datetime.strptime(view_month, '%Y-%m').date()
+            except ValueError:
+                target_month = date.today().replace(day=1)
+        else:
+            target_month = date.today().replace(day=1)
+
+        # Get month range
+        if target_month.month == 12:
+            next_month = target_month.replace(year=target_month.year + 1, month=1)
+        else:
+            next_month = target_month.replace(month=target_month.month + 1)
+
+        # Get all attendance records for the month
+        records = Attendance.query.filter(
+            Attendance.user_id == user.id,
+            Attendance.date >= target_month,
+            Attendance.date < next_month
+        ).order_by(Attendance.date.desc()).all()
+
+        # Get leaves for the month
+        leaves = Leave.query.filter(
+            Leave.user_id == user.id,
+            Leave.status == 'Approved',
+            db.or_(
+                db.and_(Leave.start_date >= target_month, Leave.start_date < next_month),
+                db.and_(Leave.end_date >= target_month, Leave.end_date < next_month),
+                db.and_(Leave.start_date < target_month, Leave.end_date >= next_month)
+            )
+        ).all()
+
+        # Build date-to-leave mapping
+        leave_dates = set()
+        for leave in leaves:
+            current = max(leave.start_date, target_month)
+            end = min(leave.end_date, next_month - timedelta(days=1))
+            while current <= end:
+                leave_dates.add(current)
+                current += timedelta(days=1)
+
+        # Build attendance data
+        attendance_data = []
+        total_working_days = 0
+        days_present = 0
+        
+        # Generate all dates in month
+        current = target_month
+        while current < next_month:
+            total_working_days += 1
+            
+            record = next((r for r in records if r.date == current), None)
+            is_leave = current in leave_dates
+
+            work_hours = 0
+            extra_hours = 0
+            check_in_display = '—'
+            check_out_display = '—'
+            work_hours_display = '—'
+            extra_hours_display = '—'
+            status = 'Absent'
+
+            if is_leave:
+                attendance_data.append({
+                    'date': current.strftime('%d %b, %Y'),
+                    'check_in': 'On Leave',
+                    'check_out': '—',
+                    'work_hours': '—',
+                    'extra_hours': '—',
+                    'status': 'Leave'
+                })
+                days_present += 1  # Leave counts as present
+            elif record and record.check_in:
+                check_in_display = record.check_in.strftime('%I:%M %p')
+                
+                if record.check_out and record.check_out > record.check_in:
+                    # Both check-in and check-out exist, and check-out is after check-in
+                    check_out_display = record.check_out.strftime('%I:%M %p')
+                    total_minutes = int((record.check_out - record.check_in).total_seconds() / 60)
+                    
+                    # Display work hours as "7h 32m"
+                    hours = total_minutes // 60
+                    minutes = total_minutes % 60
+                    work_hours_display = f'{hours}h {minutes}m'
+                    
+                    # Extra hours = hours beyond 8 (480 minutes)
+                    if total_minutes > 480:
+                        extra_minutes = total_minutes - 480
+                        extra_h = extra_minutes // 60
+                        extra_m = extra_minutes % 60
+                        extra_hours_display = f'{extra_h}h {extra_m}m'
+                    else:
+                        extra_hours_display = '0h'
+                    
+                    status = 'Present'
+                    days_present += 1
+                else:
+                    # Checked in but not checked out yet
+                    check_out_display = '—'
+                    status = 'In Progress'
+                    # Don't count as present until checked out
+
+                attendance_data.append({
+                    'date': current.strftime('%d %b, %Y'),
+                    'check_in': check_in_display,
+                    'check_out': check_out_display,
+                    'work_hours': work_hours_display,
+                    'extra_hours': extra_hours_display,
+                    'status': status
+                })
+            else:
+                attendance_data.append({
+                    'date': current.strftime('%d %b, %Y'),
+                    'check_in': '—',
+                    'check_out': '—',
+                    'work_hours': '—',
+                    'extra_hours': '—',
+                    'status': 'Absent'
+                })
+
+            current += timedelta(days=1)
+
+        # Previous and next month navigation
+        if target_month.month == 1:
+            prev_month = target_month.replace(year=target_month.year - 1, month=12)
+        else:
+            prev_month = target_month.replace(month=target_month.month - 1)
+
+        return render_template(
+            'attendance_list.html',
+            user=user,
+            view_type='monthly',
+            target_month=target_month,
+            attendance_data=attendance_data,
+            total_working_days=total_working_days,
+            days_present=days_present,
+            leaves_count=len(leave_dates),
+            prev_month=prev_month.strftime('%Y-%m'),
+            next_month=next_month.strftime('%Y-%m'),
+            current_month=target_month.strftime('%B %Y')
+        )
 
 
 @app.route('/attendance/check-in', methods=['POST'])
@@ -1004,133 +1307,6 @@ def employee_leave():
     return render_template('leave.html', user=session['user'])
 
 
-@app.route('/employee/leave/apply', methods=['POST'])
-def apply_leave():
-    """Employee applies for leave"""
-    if 'user_id' not in session:
-        return jsonify({'success': False, 'message': 'Unauthorized'}), 401
-    
-    try:
-        data = request.get_json()
-        user_id = session['user_id']
-        
-        # Validate required fields
-        leave_type = data.get('leave_type')
-        start_date_str = data.get('start_date')
-        end_date_str = data.get('end_date')
-        reason = data.get('reason', '').strip()
-        
-        if not all([leave_type, start_date_str, end_date_str, reason]):
-            return jsonify({'success': False, 'message': 'All fields are required'}), 400
-        
-        # Parse dates
-        start_date = datetime.strptime(start_date_str, '%Y-%m-%d').date()
-        end_date = datetime.strptime(end_date_str, '%Y-%m-%d').date()
-        
-        # Validate date logic
-        if start_date > end_date:
-            return jsonify({'success': False, 'message': 'End date cannot be before start date'}), 400
-        
-        # Sick leave cannot be for future dates
-        if leave_type == 'Sick Leave' and start_date > date.today():
-            return jsonify({'success': False, 'message': 'Sick leave cannot be applied for future dates'}), 400
-        
-        # Other leave types cannot be for past dates
-        if leave_type != 'Sick Leave' and start_date < date.today():
-            return jsonify({'success': False, 'message': 'Cannot apply leave for past dates'}), 400
-        
-        # Calculate total days
-        total_days = (end_date - start_date).days + 1
-        
-        # Check for overlapping leave requests
-        overlapping = Leave.query.filter(
-            Leave.user_id == user_id,
-            Leave.status != 'Rejected',
-            db.or_(
-                db.and_(Leave.start_date <= start_date, Leave.end_date >= start_date),
-                db.and_(Leave.start_date <= end_date, Leave.end_date >= end_date),
-                db.and_(Leave.start_date >= start_date, Leave.end_date <= end_date)
-            )
-        ).first()
-        
-        if overlapping:
-            return jsonify({
-                'success': False,
-                'message': 'You already have a leave request for selected dates'
-            }), 400
-        
-        # Create leave request
-        leave_request = Leave(
-            user_id=user_id,
-            leave_type=leave_type,
-            start_date=start_date,
-            end_date=end_date,
-            total_days=total_days,
-            reason=reason,
-            status='Pending'
-        )
-        
-        db.session.add(leave_request)
-        db.session.commit()
-        
-        return jsonify({
-            'success': True,
-            'message': 'Leave request submitted successfully',
-            'leave': leave_request.to_dict()
-        })
-        
-    except ValueError as e:
-        return jsonify({'success': False, 'message': 'Invalid date format'}), 400
-    except Exception as e:
-        db.session.rollback()
-        return jsonify({'success': False, 'message': f'Error: {str(e)}'}), 500
-
-
-@app.route('/employee/leave/history')
-def leave_history():
-    """Get employee's leave history"""
-    if 'user_id' not in session:
-        return jsonify({'success': False, 'message': 'Unauthorized'}), 401
-    
-    user_id = session['user_id']
-    leaves = Leave.query.filter_by(user_id=user_id).order_by(Leave.applied_on.desc()).all()
-    
-    return jsonify({
-        'success': True,
-        'leaves': [leave.to_dict() for leave in leaves]
-    })
-
-
-@app.route('/admin/mark-absent', methods=['POST'])
-def admin_mark_absent():
-    """Admin route to manually mark users as absent for a specific date"""
-    if 'user_id' not in session:
-        return jsonify({'success': False, 'message': 'Unauthorized'}), 401
-    
-    # Get target date from request, default to yesterday
-    date_str = request.json.get('date') if request.json else None
-    if date_str:
-        try:
-            target_date = datetime.strptime(date_str, '%Y-%m-%d').date()
-        except ValueError:
-            return jsonify({'success': False, 'message': 'Invalid date format. Use YYYY-MM-DD'}), 400
-    else:
-        # Default to yesterday (since today is still in progress)
-        target_date = date.today() - timedelta(days=1)
-    
-    # Don't allow marking absent for future dates
-    if target_date > date.today():
-        return jsonify({'success': False, 'message': 'Cannot mark absent for future dates'}), 400
-    
-    result = mark_absent_for_date(target_date)
-    
-    return jsonify({
-        'success': True,
-        'message': f"Marked {result['marked_absent']} users as absent for {target_date.strftime('%Y-%m-%d')}",
-        'result': result
-    })
-
-
 @app.route('/logout')
 def logout():
     """Logout route"""
@@ -1141,7 +1317,7 @@ def logout():
 @app.route('/profile')
 @login_required
 def profile():
-    """User profile page"""
+    """User profile page - Editable mode (My Profile)"""
     if 'user_id' not in session:
         flash('Please login to access your profile.', 'error')
         return redirect(url_for('login'))
@@ -1152,7 +1328,238 @@ def profile():
         flash('User not found. Please login again.', 'error')
         return redirect(url_for('login'))
     
-    return render_template('profile.html', user=user)
+    return render_template('profile.html', user=user, editable=True)
+
+
+@app.route('/employee/<int:employee_id>')
+@login_required
+def view_employee(employee_id):
+    """View employee profile - Read-only mode"""
+    current_user = User.query.get(session['user_id'])
+    if not current_user:
+        flash('Please login to access this page.', 'error')
+        return redirect(url_for('login'))
+    
+    employee = User.query.get(employee_id)
+    if not employee:
+        flash('Employee not found.', 'error')
+        return redirect(url_for('employees'))
+    
+    # Get employee's attendance status
+    status = get_employee_status(employee.id)
+    today_attendance = get_today_attendance(employee.id)
+    
+    employee_data = {
+        'id': employee.id,
+        'fullname': employee.fullname,
+        'login_id': employee.login_id,
+        'email': employee.email,
+        'role': employee.role,
+        'year_of_joining': employee.year_of_joining,
+        'created_at': employee.created_at,
+        'status': status,
+        'check_in_time': today_attendance.check_in.strftime('%I:%M %p') if today_attendance and today_attendance.check_in else None,
+        'check_out_time': today_attendance.check_out.strftime('%I:%M %p') if today_attendance and today_attendance.check_out else None
+    }
+    
+    return render_template('employee_view.html', employee=employee_data, editable=False)
+
+
+# ============= LEAVE MANAGEMENT ROUTES =============
+
+@app.route('/leave/apply', methods=['GET', 'POST'])
+@login_required
+def apply_leave():
+    """Employee leave application - EMPLOYEES ONLY"""
+    current_user = User.query.get(session['user_id'])
+    if not current_user:
+        flash('Please login to access this page.', 'error')
+        return redirect(url_for('login'))
+    
+    # Block Admin and HR Officer from applying leave
+    if current_user.role in ['Admin', 'HR Officer']:
+        flash('Admin and HR Officer cannot apply for leave from this portal.', 'error')
+        return redirect(url_for('dashboard'))
+    
+    if request.method == 'POST':
+        leave_type = request.form.get('leave_type')
+        start_date_str = request.form.get('start_date')
+        end_date_str = request.form.get('end_date')
+        remarks = request.form.get('remarks', '').strip()
+        
+        # Validation
+        if not leave_type or leave_type not in ['Paid Leave', 'Sick Leave', 'Unpaid Leave']:
+            flash('Please select a valid leave type.', 'error')
+            return redirect(url_for('apply_leave'))
+        
+        if not start_date_str or not end_date_str:
+            flash('Please select both start and end dates.', 'error')
+            return redirect(url_for('apply_leave'))
+        
+        if not remarks or len(remarks) > 250:
+            flash('Remarks are required (max 250 characters).', 'error')
+            return redirect(url_for('apply_leave'))
+        
+        try:
+            start_date = datetime.strptime(start_date_str, '%Y-%m-%d').date()
+            end_date = datetime.strptime(end_date_str, '%Y-%m-%d').date()
+        except ValueError:
+            flash('Invalid date format.', 'error')
+            return redirect(url_for('apply_leave'))
+        
+        # End date must not be before start date
+        if end_date < start_date:
+            flash('End date cannot be before start date.', 'error')
+            return redirect(url_for('apply_leave'))
+        
+        # Calculate total days (inclusive)
+        total_days = (end_date - start_date).days + 1
+        
+        # Create leave request
+        new_leave = Leave(
+            user_id=current_user.id,
+            leave_type=leave_type,
+            start_date=start_date,
+            end_date=end_date,
+            total_days=total_days,
+            reason=remarks,
+            status='Pending'
+        )
+        
+        db.session.add(new_leave)
+        db.session.commit()
+        
+        flash('Leave request submitted successfully. Status: Pending.', 'success')
+        return redirect(url_for('my_leave_requests'))
+    
+    return render_template('apply_leave.html', user=current_user)
+
+
+@app.route('/leave/my-requests')
+@login_required
+def my_leave_requests():
+    """Employee leave requests view - EMPLOYEES ONLY"""
+    current_user = User.query.get(session['user_id'])
+    if not current_user:
+        flash('Please login to access this page.', 'error')
+        return redirect(url_for('login'))
+    
+    # Block Admin and HR Officer
+    if current_user.role in ['Admin', 'HR Officer']:
+        flash('Please use the Leave Management page to view all requests.', 'error')
+        return redirect(url_for('leave_management'))
+    
+    # Get all leave requests for the current user, ordered by most recent
+    leaves = Leave.query.filter_by(user_id=current_user.id).order_by(Leave.applied_on.desc()).all()
+    
+    return render_template('my_leave_requests.html', user=current_user, leaves=leaves)
+
+
+@app.route('/leave/manage')
+@login_required
+def leave_management():
+    """Admin/HR leave management view - ADMIN & HR ONLY"""
+    current_user = User.query.get(session['user_id'])
+    if not current_user:
+        flash('Please login to access this page.', 'error')
+        return redirect(url_for('login'))
+    
+    # Only Admin and HR Officer can access
+    if current_user.role not in ['Admin', 'HR Officer']:
+        flash('You do not have permission to access this page.', 'error')
+        return redirect(url_for('dashboard'))
+    
+    # Get all leave requests with user details, ordered by status and date
+    leaves = db.session.query(Leave, User).join(User, Leave.user_id == User.id).order_by(
+        db.case(
+            (Leave.status == 'Pending', 1),
+            (Leave.status == 'Approved', 2),
+            (Leave.status == 'Rejected', 3)
+        ),
+        Leave.applied_on.desc()
+    ).all()
+    
+    return render_template('leave_management.html', user=current_user, leaves=leaves)
+
+
+@app.route('/leave/approve/<int:leave_id>', methods=['POST'])
+@login_required
+def approve_leave(leave_id):
+    """Approve leave request - ADMIN & HR ONLY"""
+    current_user = User.query.get(session['user_id'])
+    if not current_user:
+        return jsonify({'success': False, 'message': 'Unauthorized'}), 401
+    
+    # Only Admin and HR Officer can approve
+    if current_user.role not in ['Admin', 'HR Officer']:
+        return jsonify({'success': False, 'message': 'You do not have permission to approve leave requests.'}), 403
+    
+    leave = Leave.query.get(leave_id)
+    if not leave:
+        return jsonify({'success': False, 'message': 'Leave request not found.'}), 404
+    
+    # Only Pending requests can be approved
+    if leave.status != 'Pending':
+        return jsonify({'success': False, 'message': f'Cannot approve a {leave.status} request.'}), 400
+    
+    # Get optional comment
+    data = request.get_json() or {}
+    admin_comment = data.get('comment', '').strip()
+    
+    # Update leave status
+    leave.status = 'Approved'
+    leave.admin_comment = admin_comment if admin_comment else None
+    
+    db.session.commit()
+    
+    return jsonify({
+        'success': True,
+        'message': 'Leave request approved successfully.',
+        'leave_id': leave.id,
+        'status': 'Approved'
+    })
+
+
+@app.route('/leave/reject/<int:leave_id>', methods=['POST'])
+@login_required
+def reject_leave(leave_id):
+    """Reject leave request - ADMIN & HR ONLY"""
+    current_user = User.query.get(session['user_id'])
+    if not current_user:
+        return jsonify({'success': False, 'message': 'Unauthorized'}), 401
+    
+    # Only Admin and HR Officer can reject
+    if current_user.role not in ['Admin', 'HR Officer']:
+        return jsonify({'success': False, 'message': 'You do not have permission to reject leave requests.'}), 403
+    
+    leave = Leave.query.get(leave_id)
+    if not leave:
+        return jsonify({'success': False, 'message': 'Leave request not found.'}), 404
+    
+    # Only Pending requests can be rejected
+    if leave.status != 'Pending':
+        return jsonify({'success': False, 'message': f'Cannot reject a {leave.status} request.'}), 400
+    
+    # Get mandatory rejection comment
+    data = request.get_json() or {}
+    admin_comment = data.get('comment', '').strip()
+    
+    if not admin_comment:
+        return jsonify({'success': False, 'message': 'Rejection comment is required.'}), 400
+    
+    # Update leave status
+    leave.status = 'Rejected'
+    leave.admin_comment = admin_comment
+    
+    db.session.commit()
+    
+    return jsonify({
+        'success': True,
+        'message': 'Leave request rejected.',
+        'leave_id': leave.id,
+        'status': 'Rejected'
+    })
+
 
 @app.errorhandler(404)
 def page_not_found(e):
