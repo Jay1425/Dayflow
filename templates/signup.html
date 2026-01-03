@@ -1,6 +1,6 @@
 {% extends "base.html" %}
 
-{% block title %}Sign Up - HackathonApp{% endblock %}
+{% block title %}Create User - Dayflow{% endblock %}
 
 {% block content %}
 <section class="min-h-screen flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
@@ -10,8 +10,21 @@
             <div class="mx-auto h-16 w-16 bg-gradient-to-br from-blue-500 to-purple-500 rounded-full flex items-center justify-center mb-6">
                 <i class="fas fa-user-plus text-2xl text-white"></i>
             </div>
-            <h2 class="text-3xl font-bold text-white mb-2">Create Account</h2>
-            <p class="text-gray-400">Join our community of innovators</p>
+            <h2 class="text-3xl font-bold text-white mb-2">Create New User</h2>
+            <p class="text-gray-400">
+                <i class="fas fa-shield-alt mr-2"></i>Admin/HR Access Only
+            </p>
+        </div>
+
+        <!-- Info Notice -->
+        <div class="bg-gradient-to-br from-blue-500/10 to-purple-500/10 backdrop-blur-xl rounded-xl p-4 border border-blue-500/20">
+            <div class="flex items-start">
+                <i class="fas fa-info-circle text-blue-400 mt-1 mr-3"></i>
+                <div class="text-sm text-gray-300">
+                    <p class="font-semibold mb-1">Automated Credential Generation</p>
+                    <p>Login ID and temporary password will be auto-generated. The new user must change their password on first login.</p>
+                </div>
+            </div>
         </div>
 
         <!-- Signup Form -->
@@ -20,137 +33,83 @@
                 <!-- Full Name Field -->
                 <div class="mb-6">
                     <label for="fullname" class="block text-sm font-medium text-gray-300 mb-2">
-                        <i class="fas fa-user mr-2"></i>Full Name
+                        <i class="fas fa-user mr-2"></i>Full Name *
                     </label>
-                              <input data-form-input type="text" 
+                    <input data-form-input type="text" 
                            id="fullname" 
                            name="fullname" 
-                                   class="w-full px-4 py-3 bg-gradient-to-br from-white/10 to-white/5 border border-white/10 rounded-xl text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-primary-500/60 focus:border-primary-500/40 transition glass-highlight" 
-                           placeholder="Enter your full name"
+                           class="w-full px-4 py-3 bg-gradient-to-br from-white/10 to-white/5 border border-white/10 rounded-xl text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-primary-500/60 focus:border-primary-500/40 transition glass-highlight" 
+                           placeholder="Enter employee's full name"
                            required>
-                </div>
-
-                <!-- Username Field -->
-                <div class="mb-6">
-                    <label for="username" class="block text-sm font-medium text-gray-300 mb-2">
-                        <i class="fas fa-at mr-2"></i>Username
-                    </label>
-                              <input data-form-input type="text" 
-                           id="username" 
-                           name="username" 
-                                   class="w-full px-4 py-3 bg-gradient-to-br from-white/10 to-white/5 border border-white/10 rounded-xl text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-primary-500/60 focus:border-primary-500/40 transition glass-highlight" 
-                           placeholder="Choose a username"
-                           required>
-                    <p class="text-xs text-gray-500 mt-1">This will be your unique identifier</p>
                 </div>
 
                 <!-- Email Field -->
                 <div class="mb-6">
                     <label for="email" class="block text-sm font-medium text-gray-300 mb-2">
-                        <i class="fas fa-envelope mr-2"></i>Email Address
+                        <i class="fas fa-envelope mr-2"></i>Email Address *
                     </label>
-                              <input data-form-input type="email" 
+                    <input data-form-input type="email" 
                            id="email" 
                            name="email" 
-                                   class="w-full px-4 py-3 bg-gradient-to-br from-white/10 to-white/5 border border-white/10 rounded-xl text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-primary-500/60 focus:border-primary-500/40 transition glass-highlight" 
-                           placeholder="Enter your email address"
+                           class="w-full px-4 py-3 bg-gradient-to-br from-white/10 to-white/5 border border-white/10 rounded-xl text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-primary-500/60 focus:border-primary-500/40 transition glass-highlight" 
+                           placeholder="employee@dayflow.com"
                            required>
                 </div>
 
-                <!-- Password Field -->
+                <!-- Year of Joining Field -->
                 <div class="mb-6">
-                    <label for="password" class="block text-sm font-medium text-gray-300 mb-2">
-                        <i class="fas fa-lock mr-2"></i>Password
+                    <label for="year_of_joining" class="block text-sm font-medium text-gray-300 mb-2">
+                        <i class="fas fa-calendar mr-2"></i>Year of Joining *
                     </label>
-                    <div class="relative">
-                           <input data-form-input type="password" 
-                               id="password" 
-                               name="password" 
-                               class="w-full px-4 py-3 bg-gradient-to-br from-white/10 to-white/5 border border-white/10 rounded-xl text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-primary-500/60 focus:border-primary-500/40 pr-10 transition glass-highlight" 
-                               placeholder="Create a strong password"
-                               required>
-                        <button type="button" 
-                                onclick="togglePassword()" 
-                                class="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-400 hover:text-white transition-colors">
-                            <i id="password-toggle" class="fas fa-eye"></i>
-                        </button>
-                    </div>
-                    <!-- Password Strength Indicator -->
-                    <div class="mt-2">
-                        <div class="h-1 bg-white/10 rounded-full overflow-hidden">
-                            <div id="password-strength" class="h-full transition-all duration-300" style="width: 0%;"></div>
-                        </div>
-                        <p id="password-strength-text" class="text-xs text-gray-500 mt-1">Password strength: Weak</p>
-                    </div>
+                    <input data-form-input type="number" 
+                           id="year_of_joining" 
+                           name="year_of_joining" 
+                           class="w-full px-4 py-3 bg-gradient-to-br from-white/10 to-white/5 border border-white/10 rounded-xl text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-primary-500/60 focus:border-primary-500/40 transition glass-highlight" 
+                           placeholder="2026"
+                           min="2000"
+                           max="2100"
+                           value="2026"
+                           required>
                 </div>
 
-                <!-- Confirm Password Field -->
+                <!-- Role Selection -->
                 <div class="mb-6">
-                    <label for="confirm-password" class="block text-sm font-medium text-gray-300 mb-2">
-                        <i class="fas fa-check mr-2"></i>Confirm Password
+                    <label for="role" class="block text-sm font-medium text-gray-300 mb-2">
+                        <i class="fas fa-user-tag mr-2"></i>Role *
                     </label>
-                              <input data-form-input type="password" 
-                           id="confirm-password" 
-                           name="confirm-password" 
-                                   class="w-full px-4 py-3 bg-gradient-to-br from-white/10 to-white/5 border border-white/10 rounded-xl text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-primary-500/60 focus:border-primary-500/40 transition glass-highlight" 
-                           placeholder="Confirm your password"
-                           required>
-                    <p id="password-match" class="text-xs mt-1 hidden">
-                        <i class="fas fa-check text-green-400 mr-1"></i>
-                        <span class="text-green-400">Passwords match</span>
+                    <select data-form-input 
+                            id="role" 
+                            name="role" 
+                            class="w-full px-4 py-3 bg-gradient-to-br from-white/10 to-white/5 border border-white/10 rounded-xl text-white focus:outline-none focus:ring-2 focus:ring-primary-500/60 focus:border-primary-500/40 transition glass-highlight" 
+                            required>
+                        <option value="" disabled selected class="bg-gray-900">Select role</option>
+                        <option value="Employee" class="bg-gray-900">Employee</option>
+                        {% if session.role == 'Admin' %}
+                        <option value="HR Officer" class="bg-gray-900">HR Officer</option>
+                        {% endif %}
+                    </select>
+                    <p class="text-xs text-gray-500 mt-1">
+                        {% if session.role == 'Admin' %}
+                        Admins can create Employees and HR Officers
+                        {% else %}
+                        HR Officers can only create Employees
+                        {% endif %}
                     </p>
-                </div>
-
-                <!-- Terms and Conditions -->
-                <div class="flex items-start">
-                          <input id="terms" 
-                           name="terms" 
-                           type="checkbox" 
-                              class="h-4 w-4 text-primary-500 bg-white/5 border-white/20 rounded focus:ring-primary-500/60 mt-1"
-                           required>
-                    <label for="terms" class="ml-3 block text-sm text-gray-400">
-                        I agree to the 
-                        <a href="#" class="text-blue-400 hover:text-blue-300">Terms of Service</a> 
-                        and 
-                        <a href="#" class="text-blue-400 hover:text-blue-300">Privacy Policy</a>
-                    </label>
-                </div>
-
-                <!-- Newsletter Subscription -->
-                <div class="flex items-center">
-                          <input id="newsletter" 
-                           name="newsletter" 
-                           type="checkbox" 
-                              class="h-4 w-4 text-primary-500 bg-white/5 border-white/20 rounded focus:ring-primary-500/60"
-                           checked>
-                    <label for="newsletter" class="ml-3 block text-sm text-gray-400">
-                        Send me updates and product announcements
-                    </label>
                 </div>
 
                 <!-- Submit Button -->
                 <button type="submit" data-ripple
                     class="w-full py-3 text-lg text-white font-semibold rounded-xl btn-liquid glass-highlight focus:outline-none focus:ring-2 focus:ring-white/30 transform hover:scale-[1.02] transition-all duration-200">
                     <i class="fas fa-user-plus mr-2"></i>
-                    Create Account
+                    Create User Account
                 </button>
             </form>
 
-            <!-- Divider -->
-            <div class="relative my-6">
-                <div class="absolute inset-0 flex items-center">
-                    <div class="w-full border-t border-white/10"></div>
-                </div>
-                <div class="relative flex justify-center text-sm">
-                    <span class="px-2 bg-gradient-to-br from-white/10 to-white/5 text-gray-400">Or sign up with</span>
-                </div>
-            </div>
-
-            <!-- Google Sign-In Button -->
-            <div id="g_id_onload"
-                 data-client_id="YOUR_GOOGLE_CLIENT_ID.apps.googleusercontent.com"
-                 data-callback="handleGoogleLogin"
-                 data-auto_prompt="false">
+            <!-- Back to Dashboard -->
+            <div class="mt-6 text-center">
+                <a href="{{ url_for('dashboard') }}" class="text-sm text-blue-400 hover:text-blue-300 transition-colors">
+                    <i class="fas fa-arrow-left mr-2"></i>Back to Dashboard
+                </a>
             </div>
             <div class="g_id_signin"
                  data-type="standard"
@@ -218,65 +177,11 @@ function togglePassword() {
     }
 }
 
-// Password strength checker
-document.getElementById('password').addEventListener('input', function(e) {
-    const password = e.target.value;
-    const strengthBar = document.getElementById('password-strength');
-    const strengthText = document.getElementById('password-strength-text');
-    
-    let strength = 0;
-    let strengthLabel = 'Weak';
-    let strengthColor = 'bg-red-500';
-    
-    // Check password criteria
-    if (password.length >= 8) strength++;
-    if (/[a-z]/.test(password)) strength++;
-    if (/[A-Z]/.test(password)) strength++;
-    if (/[0-9]/.test(password)) strength++;
-    if (/[^A-Za-z0-9]/.test(password)) strength++;
-    
-    // Set strength level
-    if (strength >= 4) {
-        strengthLabel = 'Very Strong';
-        strengthColor = 'bg-green-500';
-    } else if (strength >= 3) {
-        strengthLabel = 'Strong';
-        strengthColor = 'bg-blue-500';
-    } else if (strength >= 2) {
-        strengthLabel = 'Medium';
-        strengthColor = 'bg-yellow-500';
-    }
-    
-    // Update UI
-    strengthBar.className = `h-full transition-all duration-300 ${strengthColor}`;
-    strengthBar.style.width = `${(strength / 5) * 100}%`;
-    strengthText.textContent = `Password strength: ${strengthLabel}`;
-    strengthText.className = `text-xs mt-1 ${strengthColor.replace('bg-', 'text-')}`;
-});
-
-// Confirm password checker
-document.getElementById('confirm-password').addEventListener('input', function(e) {
-    const password = document.getElementById('password').value;
-    const confirmPassword = e.target.value;
-    const matchIndicator = document.getElementById('password-match');
-    
-    if (confirmPassword.length > 0) {
-        if (password === confirmPassword) {
-            matchIndicator.classList.remove('hidden');
-            matchIndicator.innerHTML = '<i class="fas fa-check text-green-400 mr-1"></i><span class="text-green-400">Passwords match</span>';
-        } else {
-            matchIndicator.classList.remove('hidden');
-            matchIndicator.innerHTML = '<i class="fas fa-times text-red-400 mr-1"></i><span class="text-red-400">Passwords do not match</span>';
-        }
-    } else {
-        matchIndicator.classList.add('hidden');
-    }
-});
 
 // Add form animation on submit
 document.querySelector('form').addEventListener('submit', function(e) {
     const button = this.querySelector('button[type="submit"]');
-    button.innerHTML = '<i class="fas fa-spinner animate-spin mr-2"></i>Creating Account...';
+    button.innerHTML = '<i class="fas fa-spinner animate-spin mr-2"></i>Creating User...';
     button.disabled = true;
 });
 </script>

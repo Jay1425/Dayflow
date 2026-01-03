@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{% block title %}HackathonApp{% endblock %}</title>
+    <title>{% block title %}Dayflow HRMS{% endblock %}</title>
     
     <!-- Google Fonts: Inter for modern typography -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -376,10 +376,10 @@
                     <a href="{{ url_for('home') }}" 
                        class="flex items-center space-x-3 text-xl font-bold text-gradient hover:scale-105 transition-all duration-300 group">
                         <div class="relative">
-                            <i class="fas fa-code text-2xl animate-bounce-in group-hover:animate-wiggle"></i>
+                            <i class="fas fa-briefcase text-2xl animate-bounce-in group-hover:animate-wiggle"></i>
                             <div class="absolute inset-0 bg-gradient-to-r from-primary-500 to-accent-500 rounded-full opacity-0 group-hover:opacity-20 group-hover:animate-ping"></div>
                         </div>
-                        <span class="animate-fade-in font-display">HackathonApp</span>
+                        <span class="animate-fade-in font-display">Dayflow</span>
                     </a>
                 </div>
 
@@ -399,18 +399,65 @@
                             <i class="fas fa-info-circle text-sm opacity-90 group-hover:scale-110 transition-transform"></i>About
                         </a>
                         {% if session.user %}
+                            <!-- Dashboard Link - Role-based -->
+                            {% if session.role == 'Admin' %}
+                            <a href="{{ url_for('admin_dashboard') }}" 
+                               class="group relative inline-flex items-center gap-2 px-4 py-2 rounded-lg border border-transparent text-gray-300 hover:text-white hover:bg-white/10 transition-all duration-300
+                                      after:content-[''] after:absolute after:left-4 after:right-4 after:bottom-1 after:h-0.5 after:origin-left after:scale-x-0 after:bg-gradient-to-r after:from-primary-500 after:to-accent-500 after:transition-transform after:duration-300 hover:after:scale-x-100
+                                      {% if request.endpoint == 'admin_dashboard' %}text-primary-400 bg-primary-500/15 border-primary-500/20 shadow-lg{% endif %}">
+                                <i class="fas fa-tachometer-alt text-sm opacity-90 group-hover:scale-110 transition-transform"></i>Dashboard
+                            </a>
+                            {% elif session.role == 'HR Officer' %}
+                            <a href="{{ url_for('hr_dashboard') }}" 
+                               class="group relative inline-flex items-center gap-2 px-4 py-2 rounded-lg border border-transparent text-gray-300 hover:text-white hover:bg-white/10 transition-all duration-300
+                                      after:content-[''] after:absolute after:left-4 after:right-4 after:bottom-1 after:h-0.5 after:origin-left after:scale-x-0 after:bg-gradient-to-r after:from-primary-500 after:to-accent-500 after:transition-transform after:duration-300 hover:after:scale-x-100
+                                      {% if request.endpoint == 'hr_dashboard' %}text-primary-400 bg-primary-500/15 border-primary-500/20 shadow-lg{% endif %}">
+                                <i class="fas fa-tachometer-alt text-sm opacity-90 group-hover:scale-110 transition-transform"></i>Dashboard
+                            </a>
+                            {% else %}
                             <a href="{{ url_for('dashboard') }}" 
                                class="group relative inline-flex items-center gap-2 px-4 py-2 rounded-lg border border-transparent text-gray-300 hover:text-white hover:bg-white/10 transition-all duration-300
                                       after:content-[''] after:absolute after:left-4 after:right-4 after:bottom-1 after:h-0.5 after:origin-left after:scale-x-0 after:bg-gradient-to-r after:from-primary-500 after:to-accent-500 after:transition-transform after:duration-300 hover:after:scale-x-100
                                       {% if request.endpoint == 'dashboard' %}text-primary-400 bg-primary-500/15 border-primary-500/20 shadow-lg{% endif %}">
                                 <i class="fas fa-tachometer-alt text-sm opacity-90 group-hover:scale-110 transition-transform"></i>Dashboard
                             </a>
+                            {% endif %}
+                            
+                            <!-- Attendance -->
+                            <a href="{{ url_for('attendance') }}" 
+                               class="group relative inline-flex items-center gap-2 px-4 py-2 rounded-lg border border-transparent text-gray-300 hover:text-white hover:bg-white/10 transition-all duration-300
+                                      after:content-[''] after:absolute after:left-4 after:right-4 after:bottom-1 after:h-0.5 after:origin-left after:scale-x-0 after:bg-gradient-to-r after:from-primary-500 after:to-accent-500 after:transition-transform after:duration-300 hover:after:scale-x-100
+                                      {% if request.endpoint == 'attendance' %}text-primary-400 bg-primary-500/15 border-primary-500/20 shadow-lg{% endif %}">
+                                <i class="fas fa-calendar-check text-sm opacity-90 group-hover:scale-110 transition-transform"></i>Attendance
+                            </a>
+                            
+                            <!-- Leave -->
+                            <a href="{{ url_for('employee_leave') }}" 
+                               class="group relative inline-flex items-center gap-2 px-4 py-2 rounded-lg border border-transparent text-gray-300 hover:text-white hover:bg-white/10 transition-all duration-300
+                                      after:content-[''] after:absolute after:left-4 after:right-4 after:bottom-1 after:h-0.5 after:origin-left after:scale-x-0 after:bg-gradient-to-r after:from-primary-500 after:to-accent-500 after:transition-transform after:duration-300 hover:after:scale-x-100
+                                      {% if request.endpoint == 'employee_leave' %}text-primary-400 bg-primary-500/15 border-primary-500/20 shadow-lg{% endif %}">
+                                <i class="fas fa-umbrella-beach text-sm opacity-90 group-hover:scale-110 transition-transform"></i>Leave
+                            </a>
+                            
+                            <!-- Admin/HR Only - User Management -->
+                            {% if session.role in ['Admin', 'HR Officer'] %}
+                            <a href="{{ url_for('signup') }}" 
+                               class="group relative inline-flex items-center gap-2 px-4 py-2 rounded-lg border border-transparent text-gray-300 hover:text-white hover:bg-white/10 transition-all duration-300
+                                      after:content-[''] after:absolute after:left-4 after:right-4 after:bottom-1 after:h-0.5 after:origin-left after:scale-x-0 after:bg-gradient-to-r after:from-primary-500 after:to-accent-500 after:transition-transform after:duration-300 hover:after:scale-x-100
+                                      {% if request.endpoint == 'signup' %}text-primary-400 bg-primary-500/15 border-primary-500/20 shadow-lg{% endif %}">
+                                <i class="fas fa-user-plus text-sm opacity-90 group-hover:scale-110 transition-transform"></i>Create User
+                            </a>
+                            {% endif %}
+                            
+                            <!-- Profile -->
                             <a href="{{ url_for('profile') }}" 
                                class="group relative inline-flex items-center gap-2 px-4 py-2 rounded-lg border border-transparent text-gray-300 hover:text-white hover:bg-white/10 transition-all duration-300
                                       after:content-[''] after:absolute after:left-4 after:right-4 after:bottom-1 after:h-0.5 after:origin-left after:scale-x-0 after:bg-gradient-to-r after:from-primary-500 after:to-accent-500 after:transition-transform after:duration-300 hover:after:scale-x-100
                                       {% if request.endpoint == 'profile' %}text-primary-400 bg-primary-500/15 border-primary-500/20 shadow-lg{% endif %}">
                                 <i class="fas fa-user text-sm opacity-90 group-hover:scale-110 transition-transform"></i>Profile
                             </a>
+                            
+                            <!-- Logout -->
                             <a href="{{ url_for('logout') }}" 
                                class="group inline-flex items-center gap-2 px-4 py-2 rounded-lg border border-transparent text-red-400 hover:text-red-300 hover:bg-red-500/10 transition-all duration-300">
                                 <i class="fas fa-sign-out-alt text-sm"></i>Logout
@@ -421,12 +468,6 @@
                                       after:content-[''] after:absolute after:left-4 after:right-4 after:bottom-1 after:h-0.5 after:origin-left after:scale-x-0 after:bg-gradient-to-r after:from-primary-500 after:to-accent-500 after:transition-transform after:duration-300 hover:after:scale-x-100
                                       {% if request.endpoint == 'login' %}text-primary-400 bg-primary-500/15 border-primary-500/20 shadow-lg{% endif %}">
                                 <i class="fas fa-sign-in-alt text-sm opacity-90 group-hover:scale-110 transition-transform"></i>Login
-                            </a>
-                                     <a href="{{ url_for('signup') }}" 
-                                         class="group inline-flex items-center gap-2 px-6 py-3 rounded-xl font-semibold text-white
-                                                  btn-liquid glass-highlight transition-all duration-300
-                                                  hover:-translate-y-0.5 active:translate-y-0 active:scale-95">
-                                <i class="fas fa-user-plus group-hover:animate-bounce"></i>Sign Up
                             </a>
                         {% endif %}
                     </div>
@@ -461,6 +502,16 @@
                        class="group block px-4 py-3 rounded-xl border-l-4 border-transparent text-gray-300 hover:text-white hover:bg-white/10 transition-all duration-300
                               {% if request.endpoint == 'dashboard' %}text-primary-400 bg-primary-500/15 border-primary-500{% endif %}">
                         <i class="fas fa-tachometer-alt mr-3 text-primary-400 group-hover:scale-110 transition-transform"></i>Dashboard
+                    </a>
+                    <a href="{{ url_for('attendance') }}" 
+                       class="group block px-4 py-3 rounded-xl border-l-4 border-transparent text-gray-300 hover:text-white hover:bg-white/10 transition-all duration-300
+                              {% if request.endpoint == 'attendance' %}text-primary-400 bg-primary-500/15 border-primary-500{% endif %}">
+                        <i class="fas fa-calendar-check mr-3 text-primary-400 group-hover:scale-110 transition-transform"></i>Attendance
+                    </a>
+                    <a href="{{ url_for('employee_leave') }}" 
+                       class="group block px-4 py-3 rounded-xl border-l-4 border-transparent text-gray-300 hover:text-white hover:bg-white/10 transition-all duration-300
+                              {% if request.endpoint == 'employee_leave' %}text-primary-400 bg-primary-500/15 border-primary-500{% endif %}">
+                        <i class="fas fa-umbrella-beach mr-3 text-primary-400 group-hover:scale-110 transition-transform"></i>Leave
                     </a>
                     <a href="{{ url_for('profile') }}" 
                        class="group block px-4 py-3 rounded-xl border-l-4 border-transparent text-gray-300 hover:text-white hover:bg-white/10 transition-all duration-300

@@ -1,6 +1,6 @@
 {% extends "base.html" %}
 
-{% block title %}Dashboard - HackathonApp{% endblock %}
+{% block title %}Dashboard - Dayflow{% endblock %}
 
 {% block content %}
 <div class="min-h-screen">
@@ -168,10 +168,14 @@
                 <div data-hover-lift class="rounded-2xl p-6 bg-gradient-to-br from-white/10 to-white/5 backdrop-blur-xl border border-white/10 shadow-lg glass-highlight">
                     <h3 class="text-lg font-semibold text-white mb-4">Quick Actions</h3>
                     <div class="space-y-3">
-                        <button data-quick-action data-ripple class="group w-full flex items-center px-4 py-3 rounded-xl bg-gradient-to-br from-white/10 to-white/5 hover:bg-white/10 border border-white/10 text-white transition-all duration-200 hover:scale-[1.02] glass-highlight">
-                            <i class="fas fa-plus mr-2 group-hover:scale-110 transition-transform"></i>
-                            New Project
-                        </button>
+                        <a href="{{ url_for('attendance') }}" data-quick-action data-ripple class="group w-full flex items-center px-4 py-3 rounded-xl bg-gradient-to-br from-white/10 to-white/5 hover:bg-white/10 border border-white/10 text-white transition-all duration-200 hover:scale-[1.02] glass-highlight">
+                            <i class="fas fa-clock mr-2 group-hover:scale-110 transition-transform"></i>
+                            Mark Attendance
+                        </a>
+                        <a href="{{ url_for('employee_leave') }}" data-quick-action data-ripple class="group w-full flex items-center px-4 py-3 rounded-xl bg-gradient-to-br from-white/10 to-white/5 hover:bg-white/10 border border-white/10 text-white transition-all duration-200 hover:scale-[1.02] glass-highlight">
+                            <i class="fas fa-calendar-alt mr-2 group-hover:scale-110 transition-transform"></i>
+                            Leave Management
+                        </a>
                         <button data-quick-action data-ripple class="group w-full flex items-center px-4 py-3 rounded-xl bg-gradient-to-br from-white/10 to-white/5 hover:bg-white/10 border border-white/10 text-white transition-all duration-200 hover:scale-[1.02] glass-highlight">
                             <i class="fas fa-upload mr-2 group-hover:scale-110 transition-transform"></i>
                             Upload Files

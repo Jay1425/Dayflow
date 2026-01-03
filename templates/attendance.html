@@ -1,0 +1,123 @@
+{% extends "base.html" %}
+
+{% block title %}Attendance - Dayflow{% endblock %}
+
+{% block content %}
+<div class="min-h-screen">
+    <!-- Header -->
+    <div class="bg-gradient-to-br from-white/10 to-white/5 backdrop-blur-xl border-b border-white/10 shadow-lg glass-highlight">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+            <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+                <div class="animate-fade-in">
+                    <p class="text-sm uppercase tracking-wide text-primary-300 mb-1">Attendance</p>
+                    <h1 class="text-3xl font-bold text-white">Track your day, effortlessly.</h1>
+                    <p class="text-gray-300">Check in, check out, and see your weekly attendance at a glance.</p>
+                </div>
+                <div class="flex items-center space-x-3">
+                    <span class="px-4 py-2 rounded-full bg-white/10 text-white border border-white/10 backdrop-blur-sm" id="attendance-date">{{ today_summary.date_label }}</span>
+                    <span id="attendance-status-badge" class="px-4 py-2 rounded-full border text-sm font-semibold {{ 'bg-green-500/20 border-green-400 text-green-200' if today_summary.status == 'Present' else 'bg-yellow-500/20 border-yellow-400 text-yellow-100' if today_summary.status == 'Half Day' else 'bg-blue-500/20 border-blue-400 text-blue-100' if today_summary.status in ['In Progress', 'Not Started'] else 'bg-red-500/20 border-red-400 text-red-100' }}">{{ today_summary.status }}</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Content -->
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+            <!-- Left: Actions + Today summary -->
+            <div class="space-y-6 lg:col-span-2">
+                <!-- Action card -->
+                <div class="rounded-2xl p-6 bg-gradient-to-br from-white/10 to-white/5 backdrop-blur-xl border border-white/10 shadow-lg glass-highlight">
+                    <div class="flex items-center justify-between mb-4">
+                        <div>
+                            <h2 class="text-xl font-semibold text-white">Today's Attendance</h2>
+                            <p class="text-gray-400 text-sm">One check-in and one check-out per day. The system computes status automatically.</p>
+                        </div>
+                        <div id="attendance-message" class="text-sm text-primary-300"></div>
+                    </div>
+
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+                        <div class="p-4 rounded-xl bg-white/5 border border-white/10">
+                            <p class="text-gray-400 text-sm">Check In</p>
+                            <p id="attendance-checkin-time" class="text-2xl font-semibold text-white">{{ today_summary.check_in }}</p>
+                        </div>
+                        <div class="p-4 rounded-xl bg-white/5 border border-white/10">
+                            <p class="text-gray-400 text-sm">Check Out</p>
+                            <p id="attendance-checkout-time" class="text-2xl font-semibold text-white">{{ today_summary.check_out }}</p>
+                        </div>
+                        <div class="p-4 rounded-xl bg-white/5 border border-white/10">
+                            <p class="text-gray-400 text-sm">Duration</p>
+                            <p id="attendance-duration" class="text-2xl font-semibold text-white">{{ today_summary.duration }}</p>
+                        </div>
+                        <div class="p-4 rounded-xl bg-white/5 border border-white/10">
+                            <p class="text-gray-400 text-sm">Status</p>
+                            <p id="attendance-status" class="text-2xl font-semibold text-white">{{ today_summary.status }}</p>
+                        </div>
+                    </div>
+
+                    <div class="flex flex-wrap gap-3">
+                        <button type="button" id="btn-checkin" data-attendance-action="checkin" class="px-5 py-3 rounded-xl font-semibold text-white bg-gradient-to-r from-primary-500 to-primary-600 hover:brightness-110 transition disabled:opacity-40 disabled:cursor-not-allowed"
+                                {% if not action_state.can_check_in %}disabled{% endif %}>
+                            <i class="fas fa-play mr-2"></i> Check In
+                        </button>
+                        <button type="button" id="btn-checkout" data-attendance-action="checkout" class="px-5 py-3 rounded-xl font-semibold text-white bg-gradient-to-r from-green-500 to-emerald-600 hover:brightness-110 transition disabled:opacity-40 disabled:cursor-not-allowed"
+                                {% if not action_state.can_check_out %}disabled{% endif %}>
+                            <i class="fas fa-stop mr-2"></i> Check Out
+                        </button>
+                        <span class="text-gray-400 text-sm">Allowed: one check-in and one check-out per day.</span>
+                    </div>
+                </div>
+
+                <!-- Weekly overview -->
+                <div class="rounded-2xl p-6 bg-gradient-to-br from-white/10 to-white/5 backdrop-blur-xl border border-white/10 shadow-lg glass-highlight">
+                    <div class="flex items-center justify-between mb-4">
+                        <h2 class="text-xl font-semibold text-white">This Week</h2>
+                        <span class="text-gray-400 text-sm">Last 7 days</span>
+                    </div>
+                    <div id="attendance-week" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+                        {% for item in weekly_overview %}
+                        <div class="p-4 rounded-xl bg-white/5 border border-white/10">
+                            <p class="text-gray-400 text-sm mb-1">{{ item.date }}</p>
+                            <p class="text-white font-semibold">{{ item.status }}</p>
+                            <div class="text-xs text-gray-300 mt-2 space-y-1">
+                                <p>In: {{ item.check_in }}</p>
+                                <p>Out: {{ item.check_out }}</p>
+                                <p>Duration: {{ item.duration }}</p>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                    <div class="mt-4 flex flex-wrap gap-2 text-xs text-gray-400">
+                        <span class="px-3 py-1 rounded-full bg-green-500/20 text-green-100 border border-green-400/50">Present ≥ 8h</span>
+                        <span class="px-3 py-1 rounded-full bg-yellow-500/20 text-yellow-100 border border-yellow-400/50">Half Day ≥ 4h</span>
+                        <span class="px-3 py-1 rounded-full bg-orange-500/20 text-orange-100 border border-orange-400/50">Short Shift &lt; 4h</span>
+                        <span class="px-3 py-1 rounded-full bg-blue-500/20 text-blue-100 border border-blue-400/50">In Progress</span>
+                        <span class="px-3 py-1 rounded-full bg-red-500/20 text-red-100 border border-red-400/50">Absent</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Right: Tips / Notes -->
+            <div class="space-y-6">
+                <div class="rounded-2xl p-6 bg-gradient-to-br from-white/10 to-white/5 backdrop-blur-xl border border-white/10 shadow-lg glass-highlight">
+                    <h3 class="text-lg font-semibold text-white mb-3">Rules</h3>
+                    <ul class="space-y-2 text-gray-300 text-sm">
+                        <li>• One check-in and one check-out per day.</li>
+                        <li>• Status is auto-computed from your work duration.</li>
+                        <li>• No manual edits to attendance entries.</li>
+                        <li>• Uses your current logged-in session; no re-auth needed.</li>
+                    </ul>
+                </div>
+                <div class="rounded-2xl p-6 bg-gradient-to-br from-white/10 to-white/5 backdrop-blur-xl border border-white/10 shadow-lg glass-highlight">
+                    <h3 class="text-lg font-semibold text-white mb-3">Planned Extensions</h3>
+                    <ul class="space-y-2 text-gray-300 text-sm">
+                        <li>• Leave approvals will override daily status.</li>
+                        <li>• Admin/HR dashboard for attendance oversight.</li>
+                        <li>• Reports and analytics for productivity insights.</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

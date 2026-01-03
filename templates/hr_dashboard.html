@@ -1,0 +1,242 @@
+{% extends "base.html" %}
+
+{% block title %}HR Dashboard - Dayflow{% endblock %}
+
+{% block content %}
+<div class="min-h-screen">
+    <!-- Dashboard Header -->
+    <div class="bg-gradient-to-br from-white/10 to-white/5 backdrop-blur-xl border-b border-white/10 shadow-lg glass-highlight">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+            <div class="flex items-center justify-between">
+                <div class="animate-fade-in">
+                    <div class="flex items-center mb-2">
+                        <span class="px-3 py-1 bg-gradient-to-r from-purple-500 to-purple-600 text-white text-xs font-bold rounded-full mr-3">HR OFFICER</span>
+                        <h1 class="text-3xl font-bold text-white">
+                            Welcome back, {{ hr_data.fullname }}! 🎯
+                        </h1>
+                    </div>
+                    <p class="text-gray-300">Employee management and approvals</p>
+                </div>
+                <div class="hidden md:flex items-center space-x-4 animate-slide-up">
+                    <div class="bg-white/10 rounded-lg px-4 py-2 backdrop-blur-sm">
+                        <i class="fas fa-calendar-alt text-white mr-2"></i>
+                        <span class="text-white" id="current-date"></span>
+                    </div>
+                    <div class="bg-white/10 rounded-lg px-4 py-2 backdrop-blur-sm">
+                        <i class="fas fa-clock text-white mr-2"></i>
+                        <span class="text-white" id="current-time"></span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Dashboard Content -->
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <!-- Quick Stats -->
+        <div class="grid grid-cols-1 sm:grid-cols-3 gap-6 mb-8">
+            <div data-hover-lift class="group rounded-2xl p-6 bg-gradient-to-br from-white/10 to-white/5 backdrop-blur-xl border border-white/10 shadow-lg transition-all duration-300 hover:-translate-y-1 hover:shadow-2xl hover:border-primary-500/30 glass-highlight">
+                <div class="flex items-center">
+                    <div class="p-3 rounded-full bg-gradient-to-br from-blue-500 to-blue-600 group-hover:scale-110 transition-transform duration-300">
+                        <i class="fas fa-users text-white text-xl"></i>
+                    </div>
+                    <div class="ml-4">
+                        <p class="text-gray-400 text-sm">Total Employees</p>
+                        <p class="text-2xl font-bold text-white">{{ hr_data.total_employees }}</p>
+                    </div>
+                </div>
+                <div class="mt-4 flex items-center text-blue-400 text-sm">
+                    <i class="fas fa-arrow-up mr-1"></i>
+                    <span>Active workforce</span>
+                </div>
+            </div>
+
+            <div data-hover-lift class="group rounded-2xl p-6 bg-gradient-to-br from-white/10 to-white/5 backdrop-blur-xl border border-white/10 shadow-lg transition-all duration-300 hover:-translate-y-1 hover:shadow-2xl hover:border-primary-500/30 glass-highlight">
+                <div class="flex items-center">
+                    <div class="p-3 rounded-full bg-gradient-to-br from-green-500 to-green-600 group-hover:scale-110 transition-transform duration-300">
+                        <i class="fas fa-calendar-check text-white text-xl"></i>
+                    </div>
+                    <div class="ml-4">
+                        <p class="text-gray-400 text-sm">Today's Attendance</p>
+                        <p class="text-2xl font-bold text-white">{{ hr_data.total_attendance_today }}</p>
+                    </div>
+                </div>
+                <div class="mt-4 flex items-center text-green-400 text-sm">
+                    <i class="fas fa-check-circle mr-1"></i>
+                    <span>Employees present</span>
+                </div>
+            </div>
+
+            <div data-hover-lift class="group rounded-2xl p-6 bg-gradient-to-br from-white/10 to-white/5 backdrop-blur-xl border border-white/10 shadow-lg transition-all duration-300 hover:-translate-y-1 hover:shadow-2xl hover:border-primary-500/30 glass-highlight">
+                <div class="flex items-center">
+                    <div class="p-3 rounded-full bg-gradient-to-br from-yellow-500 to-yellow-600 group-hover:scale-110 transition-transform duration-300">
+                        <i class="fas fa-hourglass-half text-white text-xl"></i>
+                    </div>
+                    <div class="ml-4">
+                        <p class="text-gray-400 text-sm">Pending Leave</p>
+                        <p class="text-2xl font-bold text-white">{{ hr_data.pending_leaves }}</p>
+                    </div>
+                </div>
+                <div class="mt-4 flex items-center text-yellow-400 text-sm">
+                    <i class="fas fa-clock mr-1"></i>
+                    <span>Awaiting approval</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Main Content Grid -->
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+            <!-- Quick Actions -->
+            <div class="lg:col-span-1">
+                <div data-hover-lift class="rounded-2xl p-6 bg-gradient-to-br from-white/10 to-white/5 backdrop-blur-xl border border-white/10 shadow-lg glass-highlight mb-6">
+                    <h3 class="text-lg font-semibold text-white mb-4 flex items-center">
+                        <i class="fas fa-bolt text-yellow-400 mr-2"></i>
+                        Quick Actions
+                    </h3>
+                    <div class="space-y-3">
+                        <a href="{{ url_for('signup') }}" data-quick-action data-ripple class="group w-full flex items-center px-4 py-3 rounded-xl bg-gradient-to-br from-white/10 to-white/5 hover:bg-white/10 border border-white/10 text-white transition-all duration-200 hover:scale-[1.02] glass-highlight">
+                            <i class="fas fa-user-plus mr-3 group-hover:scale-110 transition-transform text-green-400"></i>
+                            <span>Add New Employee</span>
+                        </a>
+                        <a href="{{ url_for('attendance') }}" data-quick-action data-ripple class="group w-full flex items-center px-4 py-3 rounded-xl bg-gradient-to-br from-white/10 to-white/5 hover:bg-white/10 border border-white/10 text-white transition-all duration-200 hover:scale-[1.02] glass-highlight">
+                            <i class="fas fa-calendar-check mr-3 group-hover:scale-110 transition-transform text-blue-400"></i>
+                            <span>View Attendance</span>
+                        </a>
+                        <a href="{{ url_for('employee_leave') }}" data-quick-action data-ripple class="group w-full flex items-center px-4 py-3 rounded-xl bg-gradient-to-br from-white/10 to-white/5 hover:bg-white/10 border border-white/10 text-white transition-all duration-200 hover:scale-[1.02] glass-highlight">
+                            <i class="fas fa-umbrella-beach mr-3 group-hover:scale-110 transition-transform text-purple-400"></i>
+                            <span>Manage Leave</span>
+                        </a>
+                        <button data-quick-action data-ripple class="group w-full flex items-center px-4 py-3 rounded-xl bg-gradient-to-br from-white/10 to-white/5 hover:bg-white/10 border border-white/10 text-white transition-all duration-200 hover:scale-[1.02] glass-highlight">
+                            <i class="fas fa-chart-bar mr-3 group-hover:scale-110 transition-transform text-cyan-400"></i>
+                            <span>View Reports</span>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- My Info -->
+                <div data-hover-lift class="rounded-2xl p-6 bg-gradient-to-br from-white/10 to-white/5 backdrop-blur-xl border border-white/10 shadow-lg glass-highlight">
+                    <h3 class="text-lg font-semibold text-white mb-4">My Info</h3>
+                    <div class="space-y-3">
+                        <div class="flex items-center justify-between text-sm">
+                            <span class="text-gray-400">Login ID</span>
+                            <span class="text-white font-mono font-semibold">{{ hr_data.login_id }}</span>
+                        </div>
+                        <div class="flex items-center justify-between text-sm">
+                            <span class="text-gray-400">Role</span>
+                            <span class="px-2 py-1 bg-purple-500/20 text-purple-300 rounded text-xs font-semibold">HR Officer</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Pending Approvals & Activity -->
+            <div class="lg:col-span-2 space-y-6">
+                <!-- Pending Leave Approvals -->
+                <div data-hover-lift class="rounded-2xl p-6 bg-gradient-to-br from-white/10 to-white/5 backdrop-blur-xl border border-white/10 shadow-lg glass-highlight">
+                    <div class="flex items-center justify-between mb-6">
+                        <h3 class="text-xl font-semibold text-white flex items-center">
+                            <i class="fas fa-tasks text-yellow-400 mr-2"></i>
+                            Pending Leave Approvals
+                        </h3>
+                        <span class="px-3 py-1 bg-yellow-500/20 text-yellow-300 rounded-full text-sm font-semibold">
+                            {{ hr_data.pending_leaves }} pending
+                        </span>
+                    </div>
+                    
+                    {% if hr_data.pending_leaves > 0 %}
+                    <div class="space-y-3">
+                        <div class="p-4 rounded-xl bg-white/5 border border-white/10 hover:bg-white/10 transition-colors">
+                            <div class="flex items-start justify-between">
+                                <div class="flex-1">
+                                    <p class="text-white font-medium">Employee Name</p>
+                                    <p class="text-gray-400 text-sm">Jan 10 - Jan 12, 2026 • 3 days</p>
+                                    <p class="text-gray-500 text-xs mt-1">Applied 2 days ago</p>
+                                </div>
+                                <div class="flex gap-2">
+                                    <button class="px-3 py-2 bg-green-500/20 hover:bg-green-500/30 text-green-300 rounded-lg text-sm transition-colors">
+                                        <i class="fas fa-check mr-1"></i>Approve
+                                    </button>
+                                    <button class="px-3 py-2 bg-red-500/20 hover:bg-red-500/30 text-red-300 rounded-lg text-sm transition-colors">
+                                        <i class="fas fa-times mr-1"></i>Reject
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    {% else %}
+                    <div class="text-center py-8">
+                        <i class="fas fa-check-circle text-green-400 text-4xl mb-3"></i>
+                        <p class="text-gray-400">All leave requests processed</p>
+                    </div>
+                    {% endif %}
+                </div>
+
+                <!-- Recent Activity -->
+                <div data-hover-lift class="rounded-2xl p-6 bg-gradient-to-br from-white/10 to-white/5 backdrop-blur-xl border border-white/10 shadow-lg glass-highlight">
+                    <div class="flex items-center justify-between mb-6">
+                        <h3 class="text-xl font-semibold text-white">Recent Activity</h3>
+                        <button class="text-primary-400 hover:text-primary-300 transition-colors text-sm">
+                            View All
+                        </button>
+                    </div>
+                    <div class="space-y-4">
+                        <div class="p-4 rounded-xl hover:bg-white/5 transition-colors duration-200">
+                            <div class="flex items-start space-x-3">
+                                <div class="p-2 bg-green-500/20 rounded-full">
+                                    <i class="fas fa-check text-green-400"></i>
+                                </div>
+                                <div class="flex-1">
+                                    <p class="text-white font-medium">Leave approved for John Doe</p>
+                                    <p class="text-gray-400 text-sm">Sick leave for Jan 5-7</p>
+                                    <p class="text-gray-500 text-xs mt-1">2 hours ago</p>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="p-4 rounded-xl hover:bg-white/5 transition-colors duration-200">
+                            <div class="flex items-start space-x-3">
+                                <div class="p-2 bg-blue-500/20 rounded-full">
+                                    <i class="fas fa-user-plus text-blue-400"></i>
+                                </div>
+                                <div class="flex-1">
+                                    <p class="text-white font-medium">New employee onboarded</p>
+                                    <p class="text-gray-400 text-sm">Jane Smith added to Marketing</p>
+                                    <p class="text-gray-500 text-xs mt-1">5 hours ago</p>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="p-4 rounded-xl hover:bg-white/5 transition-colors duration-200">
+                            <div class="flex items-start space-x-3">
+                                <div class="p-2 bg-purple-500/20 rounded-full">
+                                    <i class="fas fa-calendar-check text-purple-400"></i>
+                                </div>
+                                <div class="flex-1">
+                                    <p class="text-white font-medium">Attendance summary generated</p>
+                                    <p class="text-gray-400 text-sm">Weekly report for Jan 1-7</p>
+                                    <p class="text-gray-500 text-xs mt-1">Yesterday</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+// Update current date and time
+function updateDateTime() {
+    const now = new Date();
+    document.getElementById('current-date').textContent = now.toLocaleDateString('en-US', { 
+        weekday: 'short', month: 'short', day: 'numeric' 
+    });
+    document.getElementById('current-time').textContent = now.toLocaleTimeString('en-US', { 
+        hour: '2-digit', minute: '2-digit' 
+    });
+}
+updateDateTime();
+setInterval(updateDateTime, 60000);
+</script>
+{% endblock %}

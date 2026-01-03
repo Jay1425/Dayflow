@@ -10,6 +10,7 @@ document.addEventListener('DOMContentLoaded', function() {
     initBackToTop();
     initCounters();
     initFlashMessages();
+    initAttendance();
     
     console.log('🚀 HackathonApp (Tailwind) initialized successfully!');
 });
@@ -135,6 +136,11 @@ function initScrollAnimations() {
 // ========================================
 // Counter Animation
 // ========================================
+function initCounters() {
+    // Will be triggered by scroll observer
+    // No immediate initialization needed
+}
+
 function animateCounters() {
     const counters = document.querySelectorAll('[data-target]');
     
@@ -202,6 +208,209 @@ function initFlashMessages() {
             }, 300);
         }, 5000);
     });
+}
+
+// ========================================
+// Attendance Module
+// ========================================
+function initAttendance() {
+    const checkInBtn = document.getElementById('btn-checkin');
+    const checkOutBtn = document.getElementById('btn-checkout');
+    const messageEl = document.getElementById('attendance-message');
+    const statusBadge = document.getElementById('attendance-status-badge');
+    const statusText = document.getElementById('attendance-status');
+    const checkInText = document.getElementById('attendance-checkin-time');
+    const checkOutText = document.getElementById('attendance-checkout-time');
+    const durationText = document.getElementById('attendance-duration');
+    const dateLabel = document.getElementById('attendance-date');
+    const weekGrid = document.getElementById('attendance-week');
+
+    if (!checkInBtn || !checkOutBtn || !weekGrid) {
+        console.log('Attendance module: Not on attendance page, skipping initialization');
+        return; // Not on attendance page
+    }
+    
+    console.log('Attendance module: Initializing...');
+    console.log('Check-in button:', checkInBtn);
+    console.log('Check-out button:', checkOutBtn);
+
+    const statusClassMap = {
+        'Present': 'bg-green-500/20 border-green-400 text-green-200',
+        'Half Day': 'bg-yellow-500/20 border-yellow-400 text-yellow-100',
+        'Short Shift': 'bg-orange-500/20 border-orange-400 text-orange-100',
+        'In Progress': 'bg-blue-500/20 border-blue-400 text-blue-100',
+        'Not Started': 'bg-blue-500/20 border-blue-400 text-blue-100',
+        'Absent': 'bg-red-500/20 border-red-400 text-red-100'
+    };
+
+    let timerInterval = null;
+
+    function parseTime(timeStr) {
+        // Parse "HH:MM AM/PM" format
+        if (!timeStr || timeStr === '—') return null;
+        const [time, period] = timeStr.split(' ');
+        const [hours, minutes] = time.split(':').map(Number);
+        let hour24 = hours;
+        if (period === 'PM' && hours !== 12) hour24 += 12;
+        if (period === 'AM' && hours === 12) hour24 = 0;
+        
+        const now = new Date();
+        return new Date(now.getFullYear(), now.getMonth(), now.getDate(), hour24, minutes);
+    }
+
+    function formatDuration(totalSeconds) {
+        const hrs = Math.floor(totalSeconds / 3600);
+        const mins = Math.floor((totalSeconds % 3600) / 60);
+        const secs = totalSeconds % 60;
+        return `${hrs}h ${mins}m ${secs}s`;
+    }
+
+    function startTimer(checkInTime) {
+        stopTimer(); // Clear any existing timer
+        
+        const checkInDate = parseTime(checkInTime);
+        if (!checkInDate) return;
+
+        function updateTimer() {
+            const now = new Date();
+            const elapsed = Math.floor((now - checkInDate) / 1000); // seconds
+            durationText.textContent = formatDuration(elapsed);
+            statusText.textContent = 'Working...';
+        }
+
+        updateTimer(); // Update immediately
+        timerInterval = setInterval(updateTimer, 1000); // Update every second
+    }
+
+    function stopTimer() {
+        if (timerInterval) {
+            clearInterval(timerInterval);
+            timerInterval = null;
+        }
+    }
+
+    function setActions(actions) {
+        checkInBtn.disabled = !actions.can_check_in;
+        checkOutBtn.disabled = !actions.can_check_out;
+    }
+
+    function setStatusBadge(status) {
+        if (!statusBadge) return;
+        statusBadge.className = 'px-4 py-2 rounded-full border text-sm font-semibold ' + (statusClassMap[status] || 'bg-blue-500/20 border-blue-400 text-blue-100');
+        statusBadge.textContent = status;
+    }
+
+    function updateToday(today) {
+        dateLabel.textContent = today.date_label;
+        statusText.textContent = today.status;
+        checkInText.textContent = today.check_in;
+        checkOutText.textContent = today.check_out;
+        durationText.textContent = today.duration;
+        setStatusBadge(today.status);
+        
+        // Start timer if checked in but not checked out
+        if (today.check_in !== '—' && today.check_out === '—') {
+            startTimer(today.check_in);
+        } else {
+            stopTimer();
+        }
+    }
+
+    function updateWeekly(week) {
+        if (!week || !Array.isArray(week)) return;
+        weekGrid.innerHTML = week.map(item => `
+            <div class="p-4 rounded-xl bg-white/5 border border-white/10">
+                <p class="text-gray-400 text-sm mb-1">${item.date}</p>
+                <p class="text-white font-semibold">${item.status}</p>
+                <div class="text-xs text-gray-300 mt-2 space-y-1">
+                    <p>In: ${item.check_in}</p>
+                    <p>Out: ${item.check_out}</p>
+                    <p>Duration: ${item.duration}</p>
+                </div>
+            </div>
+        `).join('');
+    }
+
+    function showMessage(text, success = true) {
+        if (!messageEl) return;
+        messageEl.textContent = text;
+        messageEl.className = success ? 'text-sm text-green-300' : 'text-sm text-red-300';
+        if (text) {
+            setTimeout(() => messageEl.textContent = '', 4000);
+        }
+    }
+
+    async function callAction(url) {
+        try {
+            showMessage('Processing...', true);
+            
+            // Disable both buttons during request
+            checkInBtn.disabled = true;
+            checkOutBtn.disabled = true;
+            
+            const res = await fetch(url, { 
+                method: 'POST', 
+                headers: { 
+                    'Content-Type': 'application/json',
+                    'X-Requested-With': 'XMLHttpRequest' 
+                },
+                credentials: 'same-origin'
+            });
+            
+            if (!res.ok) {
+                const errorData = await res.json().catch(() => ({}));
+                showMessage(errorData.message || `Error: ${res.status}`, false);
+                // Re-enable buttons based on previous state
+                setTimeout(() => {
+                    checkInBtn.disabled = false;
+                    checkOutBtn.disabled = false;
+                }, 1000);
+                return;
+            }
+            
+            const data = await res.json();
+            if (!data.success) {
+                showMessage(data.message || 'Unable to update attendance.', false);
+                // Re-enable buttons based on previous state
+                setTimeout(() => {
+                    checkInBtn.disabled = false;
+                    checkOutBtn.disabled = false;
+                }, 1000);
+                return;
+            }
+            updateToday(data.today);
+            updateWeekly(data.weekly);
+            setActions(data.actions);
+            showMessage(data.message || 'Updated.');
+        } catch (err) {
+            console.error('Attendance error:', err);
+            showMessage('Network error. Please try again.', false);
+            // Re-enable buttons on error
+            setTimeout(() => {
+                checkInBtn.disabled = false;
+                checkOutBtn.disabled = false;
+            }, 1000);
+        }
+    }
+
+    checkInBtn.addEventListener('click', (e) => {
+        e.preventDefault();
+        console.log('Check-in button clicked');
+        callAction('/attendance/check-in');
+    });
+    
+    checkOutBtn.addEventListener('click', (e) => {
+        e.preventDefault();
+        console.log('Check-out button clicked');
+        callAction('/attendance/check-out');
+    });
+
+    // Initialize timer if already checked in
+    const initialCheckIn = checkInText.textContent;
+    const initialCheckOut = checkOutText.textContent;
+    if (initialCheckIn !== '—' && initialCheckOut === '—') {
+        startTimer(initialCheckIn);
+    }
 }
 
 // ========================================
