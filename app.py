@@ -256,6 +256,18 @@ class User(db.Model):
     newsletter = db.Column(db.Boolean, default=False)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     
+    # Profile management fields
+    profile_photo = db.Column(db.String(200), nullable=True)
+    resume_file = db.Column(db.String(200), nullable=True)
+    is_active = db.Column(db.Boolean, default=True)
+    department = db.Column(db.String(100), nullable=True)
+    designation = db.Column(db.String(100), nullable=True)
+    date_of_joining = db.Column(db.Date, nullable=True)
+    reporting_manager = db.Column(db.String(100), nullable=True)
+    last_login_at = db.Column(db.DateTime, nullable=True)
+    last_login_device = db.Column(db.String(200), nullable=True)
+    password_updated_at = db.Column(db.DateTime, nullable=True)
+    
     def set_password(self, password):
         """Hash and set password"""
         self.password_hash = generate_password_hash(password)
@@ -355,6 +367,95 @@ class Leave(db.Model):
             'status': self.status,
             'admin_comment': self.admin_comment,
             'applied_on': self.applied_on.strftime('%b %d, %Y')
+        }
+
+
+class Salary(db.Model):
+    """Salary information for employees"""
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False, unique=True)
+    
+    # Wage details (stored as JSON)
+    monthly_wage = db.Column(db.Float, nullable=False, default=0.0)
+    yearly_wage = db.Column(db.Float, nullable=False, default=0.0)
+    working_days_per_week = db.Column(db.Integer, default=5)
+    daily_working_hours = db.Column(db.Float, default=8.0)
+    break_time_hours = db.Column(db.Float, default=1.0)
+    
+    # Salary breakdown
+    basic_salary = db.Column(db.Float, default=0.0)
+    hra = db.Column(db.Float, default=0.0)
+    standard_allowance = db.Column(db.Float, default=1500.0)
+    performance_bonus = db.Column(db.Float, default=0.0)
+    lta = db.Column(db.Float, default=0.0)
+    fixed_allowance = db.Column(db.Float, default=0.0)
+    gross_salary = db.Column(db.Float, default=0.0)
+    
+    # PF details
+    employee_pf_percent = db.Column(db.Float, default=12.0)
+    employer_pf_percent = db.Column(db.Float, default=12.0)
+    employee_pf_amount = db.Column(db.Float, default=0.0)
+    employer_pf_amount = db.Column(db.Float, default=0.0)
+    
+    # Tax deductions
+    professional_tax = db.Column(db.Float, default=200.0)
+    
+    # Net salary
+    net_salary = db.Column(db.Float, default=0.0)
+    
+    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    
+    def calculate_breakdown(self):
+        """Calculate salary breakdown based on monthly wage"""
+        self.yearly_wage = self.monthly_wage * 12
+        self.basic_salary = self.monthly_wage * 0.5
+        self.hra = self.basic_salary * 0.5
+        self.performance_bonus = self.basic_salary * 0.0833
+        self.lta = self.basic_salary * 0.08333
+        
+        # Calculate fixed allowance to match monthly wage
+        total_components = (self.basic_salary + self.hra + self.standard_allowance + 
+                          self.performance_bonus + self.lta)
+        self.fixed_allowance = max(0, self.monthly_wage - total_components)
+        
+        self.gross_salary = self.monthly_wage
+        
+        # Calculate PF amounts
+        self.employee_pf_amount = self.basic_salary * (self.employee_pf_percent / 100)
+        self.employer_pf_amount = self.basic_salary * (self.employer_pf_percent / 100)
+        
+        # Calculate net salary
+        total_deductions = self.employee_pf_amount + self.professional_tax
+        self.net_salary = self.gross_salary - total_deductions
+    
+    def to_dict(self):
+        return {
+            'wage_details': {
+                'monthly_wage': self.monthly_wage,
+                'yearly_wage': self.yearly_wage,
+                'working_days_per_week': self.working_days_per_week,
+                'daily_working_hours': self.daily_working_hours,
+                'break_time_hours': self.break_time_hours
+            },
+            'breakdown': {
+                'basic': self.basic_salary,
+                'hra': self.hra,
+                'standard_allowance': self.standard_allowance,
+                'performance_bonus': self.performance_bonus,
+                'lta': self.lta,
+                'fixed_allowance': self.fixed_allowance,
+                'gross_salary': self.gross_salary
+            },
+            'pf': {
+                'employee_percent': self.employee_pf_percent,
+                'employer_percent': self.employer_pf_percent,
+                'employee_amount': self.employee_pf_amount,
+                'employer_amount': self.employer_pf_amount
+            },
+            'tax': {
+                'professional_tax': self.professional_tax
+            },
+            'net_salary': self.net_salary
         }
 
 
@@ -961,6 +1062,14 @@ def get_employee_status(user_id):
     return 'absent'
 
 
+def get_salary_data(user_id):
+    """Get salary data for user"""
+    salary = Salary.query.filter_by(user_id=user_id).first()
+    if salary:
+        return salary.to_dict()
+    return None
+
+
 @app.route('/employees')
 @login_required
 def employees():
@@ -1565,20 +1674,56 @@ def logout():
     return redirect(url_for('home'))
 
 @app.route('/profile')
+@app.route('/profile/<int:user_id>')
 @login_required
-def profile():
-    """User profile page - Editable mode (My Profile)"""
-    if 'user_id' not in session:
-        flash('Please login to access your profile.', 'error')
-        return redirect(url_for('login'))
-    
-    user = User.query.get(session['user_id'])
-    if not user:
+def profile(user_id=None):
+    """User profile page with edit permissions"""
+    viewer = User.query.get(session['user_id'])
+    if not viewer:
         session.clear()
-        flash('User not found. Please login again.', 'error')
+        flash('Please login again.', 'error')
         return redirect(url_for('login'))
     
-    return render_template('profile.html', user=user, editable=True)
+    # Determine which user profile to show
+    if user_id is None:
+        # Viewing own profile
+        user = viewer
+        is_self_view = True
+        editable = True
+    else:
+        # Viewing another user's profile
+        user = User.query.get(user_id)
+        if not user:
+            flash('User not found.', 'error')
+            return redirect(url_for('employees'))
+        is_self_view = (user.id == viewer.id)
+        # Admin/HR can view others but with different edit permissions
+        editable = is_self_view or viewer.role in ['Admin', 'HR Officer']
+    
+    # Determine if viewer is HR/Admin
+    is_hr_admin_viewer = viewer.role in ['Admin', 'HR Officer']
+    
+    # Determine dashboard URL based on viewer role
+    if viewer.role == 'Admin':
+        dashboard_url = url_for('admin_dashboard')
+    elif viewer.role == 'HR Officer':
+        dashboard_url = url_for('hr_dashboard')
+    else:
+        dashboard_url = url_for('dashboard')
+    
+    # Get salary data if HR/Admin viewing employee profile
+    salary_data = None
+    if is_hr_admin_viewer and user.role == 'Employee':
+        salary_data = get_salary_data(user.id)
+    
+    return render_template('profile.html', 
+                         user=user, 
+                         viewer=viewer,
+                         editable=editable,
+                         is_self_view=is_self_view,
+                         is_hr_admin_viewer=is_hr_admin_viewer,
+                         dashboard_url=dashboard_url,
+                         salary_data=salary_data)
 
 
 @app.route('/employee/<int:employee_id>')
@@ -1877,6 +2022,319 @@ def reject_leave(leave_id):
     })
 
 
+# ============= PROFILE MANAGEMENT ROUTES =============
+
+@app.route('/profile/update/<int:user_id>', methods=['POST'])
+@login_required
+def update_profile(user_id):
+    """Update user profile information"""
+    viewer = User.query.get(session['user_id'])
+    user = User.query.get(user_id)
+    
+    if not user:
+        flash('User not found.', 'error')
+        return redirect(url_for('employees'))
+    
+    # Permission check
+    is_self = (user.id == viewer.id)
+    is_hr_admin = viewer.role in ['Admin', 'HR Officer']
+    
+    if not (is_self or is_hr_admin):
+        flash('You do not have permission to edit this profile.', 'error')
+        return redirect(url_for('profile'))
+    
+    try:
+        # Fields everyone can edit on their own profile
+        if is_self:
+            user.fullname = request.form.get('fullname', user.fullname)
+            user.email = request.form.get('email', user.email)
+            user.newsletter = 'newsletter' in request.form
+        
+        # Fields only HR/Admin can edit
+        if is_hr_admin:
+            user.fullname = request.form.get('fullname', user.fullname)
+            user.email = request.form.get('email', user.email)
+            user.newsletter = 'newsletter' in request.form
+            user.department = request.form.get('department', user.department)
+            user.designation = request.form.get('designation', user.designation)
+            user.reporting_manager = request.form.get('reporting_manager', user.reporting_manager)
+            
+            date_of_joining_str = request.form.get('date_of_joining')
+            if date_of_joining_str:
+                user.date_of_joining = datetime.strptime(date_of_joining_str, '%Y-%m-%d').date()
+        
+        db.session.commit()
+        flash('Profile updated successfully!', 'success')
+        
+    except Exception as e:
+        db.session.rollback()
+        flash(f'Error updating profile: {str(e)}', 'error')
+    
+    return redirect(url_for('profile', user_id=user_id if not is_self else None))
+
+
+@app.route('/profile/upload-photo/<int:user_id>', methods=['POST'])
+@login_required
+def upload_profile_photo(user_id):
+    """Upload profile photo with cropping support"""
+    viewer = User.query.get(session['user_id'])
+    user = User.query.get(user_id)
+    
+    if not user:
+        return jsonify({'success': False, 'message': 'User not found'}), 404
+    
+    # Permission check
+    is_self = (user.id == viewer.id)
+    is_hr_admin = viewer.role in ['Admin', 'HR Officer']
+    
+    if not (is_self or is_hr_admin):
+        return jsonify({'success': False, 'message': 'Permission denied'}), 403
+    
+    if 'photo' not in request.files:
+        return jsonify({'success': False, 'message': 'No file uploaded'}), 400
+    
+    file = request.files['photo']
+    if file.filename == '':
+        return jsonify({'success': False, 'message': 'No file selected'}), 400
+    
+    # Check file type
+    allowed_extensions = {'png', 'jpg', 'jpeg', 'webp'}
+    file_ext = file.filename.rsplit('.', 1)[1].lower() if '.' in file.filename else ''
+    
+    if file_ext not in allowed_extensions:
+        return jsonify({'success': False, 'message': 'Invalid file type. Use PNG, JPG, or WEBP'}), 400
+    
+    # Check file size (2MB max)
+    file.seek(0, 2)  # Seek to end
+    file_size = file.tell()
+    file.seek(0)  # Reset to start
+    
+    if file_size > 2 * 1024 * 1024:  # 2MB
+        return jsonify({'success': False, 'message': 'File too large. Max 2MB'}), 400
+    
+    try:
+        # Save file
+        filename = f"profile_{user.id}_{datetime.now().strftime('%Y%m%d_%H%M%S')}.{file_ext}"
+        upload_dir = os.path.join('static', 'uploads', 'profiles')
+        os.makedirs(upload_dir, exist_ok=True)
+        
+        file_path = os.path.join(upload_dir, filename)
+        file.save(file_path)
+        
+        # Update user profile
+        old_photo = user.profile_photo
+        user.profile_photo = f"uploads/profiles/{filename}"
+        db.session.commit()
+        
+        # Delete old photo if exists
+        if old_photo and os.path.exists(os.path.join('static', old_photo)):
+            try:
+                os.remove(os.path.join('static', old_photo))
+            except:
+                pass
+        
+        return jsonify({
+            'success': True,
+            'message': 'Profile photo updated successfully',
+            'photo_url': url_for('static', filename=user.profile_photo)
+        })
+        
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'success': False, 'message': f'Upload failed: {str(e)}'}), 500
+
+
+@app.route('/profile/upload-resume/<int:user_id>', methods=['POST'])
+@login_required
+def upload_resume(user_id):
+    """Upload resume file (PDF/DOC/DOCX)"""
+    viewer = User.query.get(session['user_id'])
+    user = User.query.get(user_id)
+    
+    if not user:
+        flash('User not found.', 'error')
+        return redirect(url_for('employees'))
+    
+    # Permission check
+    is_self = (user.id == viewer.id)
+    is_hr_admin = viewer.role in ['Admin', 'HR Officer']
+    
+    if not (is_self or is_hr_admin):
+        flash('Permission denied.', 'error')
+        return redirect(url_for('profile'))
+    
+    if 'resume' not in request.files:
+        flash('No file uploaded.', 'error')
+        return redirect(url_for('profile', user_id=user_id if not is_self else None))
+    
+    file = request.files['resume']
+    if file.filename == '':
+        flash('No file selected.', 'error')
+        return redirect(url_for('profile', user_id=user_id if not is_self else None))
+    
+    # Check file type
+    allowed_extensions = {'pdf', 'doc', 'docx'}
+    file_ext = file.filename.rsplit('.', 1)[1].lower() if '.' in file.filename else ''
+    
+    if file_ext not in allowed_extensions:
+        flash('Invalid file type. Use PDF, DOC, or DOCX only.', 'error')
+        return redirect(url_for('profile', user_id=user_id if not is_self else None))
+    
+    # Check file size (5MB max)
+    file.seek(0, 2)
+    file_size = file.tell()
+    file.seek(0)
+    
+    if file_size > 5 * 1024 * 1024:  # 5MB
+        flash('File too large. Maximum 5MB allowed.', 'error')
+        return redirect(url_for('profile', user_id=user_id if not is_self else None))
+    
+    try:
+        # Save file
+        filename = f"resume_{user.id}_{datetime.now().strftime('%Y%m%d_%H%M%S')}.{file_ext}"
+        upload_dir = os.path.join('static', 'uploads', 'resumes')
+        os.makedirs(upload_dir, exist_ok=True)
+        
+        file_path = os.path.join(upload_dir, filename)
+        file.save(file_path)
+        
+        # Update user profile
+        old_resume = user.resume_file
+        user.resume_file = f"uploads/resumes/{filename}"
+        db.session.commit()
+        
+        # Delete old resume if exists
+        if old_resume and os.path.exists(os.path.join('static', old_resume)):
+            try:
+                os.remove(os.path.join('static', old_resume))
+            except:
+                pass
+        
+        flash('Resume uploaded successfully!', 'success')
+        
+    except Exception as e:
+        db.session.rollback()
+        flash(f'Upload failed: {str(e)}', 'error')
+    
+    return redirect(url_for('profile', user_id=user_id if not is_self else None))
+
+
+@app.route('/profile/salary/<int:user_id>', methods=['POST'])
+@role_required('Admin', 'HR Officer')
+def update_salary(user_id):
+    """Update salary information (HR/Admin only)"""
+    user = User.query.get(user_id)
+    
+    if not user or user.role != 'Employee':
+        flash('Invalid user.', 'error')
+        return redirect(url_for('employees'))
+    
+    try:
+        monthly_wage = float(request.form.get('monthly_wage', 0))
+        
+        # Get or create salary record
+        salary = Salary.query.filter_by(user_id=user_id).first()
+        if not salary:
+            salary = Salary(user_id=user_id)
+            db.session.add(salary)
+        
+        # Update wage details
+        salary.monthly_wage = monthly_wage
+        salary.working_days_per_week = int(request.form.get('working_days_per_week', 5))
+        salary.daily_working_hours = float(request.form.get('daily_hours', 8.0))
+        salary.break_time_hours = float(request.form.get('break_hours', 1.0))
+        
+        # Update PF percentages
+        salary.employee_pf_percent = float(request.form.get('employee_pf_percent', 12.0))
+        salary.employer_pf_percent = float(request.form.get('employer_pf_percent', 12.0))
+        
+        # Update tax
+        salary.professional_tax = float(request.form.get('professional_tax', 200.0))
+        
+        # Calculate all breakdowns
+        salary.calculate_breakdown()
+        
+        db.session.commit()
+        flash('Salary information updated successfully!', 'success')
+        
+    except Exception as e:
+        db.session.rollback()
+        flash(f'Error updating salary: {str(e)}', 'error')
+    
+    return redirect(url_for('profile', user_id=user_id))
+
+
+@app.route('/management-action/<int:user_id>', methods=['POST'])
+@role_required('Admin', 'HR Officer')
+def management_action(user_id):
+    """Handle management actions on employee profiles"""
+    viewer = User.query.get(session['user_id'])
+    user = User.query.get(user_id)
+    
+    if not user or user.id == viewer.id:
+        flash('Invalid user.', 'error')
+        return redirect(url_for('employees'))
+    
+    action = request.form.get('action')
+    
+    try:
+        if action == 'assign_role' and viewer.role == 'Admin':
+            new_role = request.form.get('new_role')
+            if new_role in ['Employee', 'HR Officer']:
+                user.role = new_role
+                flash(f'Role updated to {new_role}.', 'success')
+        
+        elif action == 'toggle_active':
+            user.is_active = not user.is_active
+            status = 'activated' if user.is_active else 'deactivated'
+            flash(f'Employee {status} successfully.', 'success')
+        
+        elif action == 'reset_password':
+            new_temp_password = generate_temp_password()
+            user.set_password(new_temp_password)
+            user.is_first_login = True
+            user.password_updated_at = datetime.utcnow()
+            
+            # Store in session to display
+            session['reset_password_login_id'] = user.login_id or user.username
+            session['reset_password_temp'] = new_temp_password
+            session['reset_password_user'] = user.fullname
+            
+            flash('Password reset successfully. Temporary credentials generated.', 'success')
+            db.session.commit()
+            return redirect(url_for('password_reset_success'))
+        
+        else:
+            flash('Invalid action.', 'error')
+            return redirect(url_for('profile', user_id=user_id))
+        
+        db.session.commit()
+        
+    except Exception as e:
+        db.session.rollback()
+        flash(f'Action failed: {str(e)}', 'error')
+    
+    return redirect(url_for('profile', user_id=user_id))
+
+
+@app.route('/password-reset-success')
+@role_required('Admin', 'HR Officer')
+def password_reset_success():
+    """Display temporary password after reset"""
+    login_id = session.pop('reset_password_login_id', None)
+    temp_password = session.pop('reset_password_temp', None)
+    fullname = session.pop('reset_password_user', None)
+    
+    if not login_id or not temp_password:
+        flash('No reset information found.', 'error')
+        return redirect(url_for('employees'))
+    
+    return render_template('user_created.html',
+                         login_id=login_id,
+                         temp_password=temp_password,
+                         fullname=fullname)
+
+
 @app.errorhandler(404)
 def page_not_found(e):
     """404 error handler"""
@@ -1884,3 +2342,4 @@ def page_not_found(e):
 
 if __name__ == '__main__':
     app.run(debug=True, host='0.0.0.0', port=5000)
+
