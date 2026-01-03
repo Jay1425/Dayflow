@@ -1,6 +1,6 @@
 {% extends 'base.html' %}
 
-{% block title %}My Leave Requests - Dayflow{% endblock %}
+{% block title %}My Time Off - Dayflow{% endblock %}
 
 {% block content %}
 <div class="min-h-screen">
@@ -10,18 +10,89 @@
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
             <div class="flex items-center justify-between">
                 <div>
-                    <h1 class="text-2xl font-bold text-white">My Leave Requests</h1>
-                    <p class="text-sm text-gray-400 mt-1">Track the status of your leave applications</p>
+                    <h1 class="text-2xl font-bold text-white">My Time Off</h1>
+                    <p class="text-sm text-gray-400 mt-1">Track the status of your time off requests</p>
                 </div>
                 <a href="{{ url_for('apply_leave') }}" class="px-6 py-3 bg-gradient-to-r from-primary-600 to-accent-600 text-white font-semibold rounded-lg hover:from-primary-700 hover:to-accent-700 transition-all duration-300 shadow-lg hover:shadow-xl">
-                    <i class="fas fa-plus mr-2"></i>Apply for Leave
+                    <i class="fas fa-plus mr-2"></i>New Request
                 </a>
             </div>
         </div>
     </div>
 
+    <!-- Allocation Summary -->
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-8">
+        <div class="grid md:grid-cols-2 gap-6 mb-6">
+            <!-- Paid Time Off -->
+            <div class="bg-gradient-to-br from-green-500/10 to-green-600/5 backdrop-blur-xl border border-green-500/20 rounded-2xl p-6 shadow-lg glass-highlight">
+                <div class="flex items-center justify-between mb-4">
+                    <div class="flex items-center gap-3">
+                        <div class="w-12 h-12 bg-green-500/20 rounded-xl flex items-center justify-center">
+                            <i class="fas fa-umbrella-beach text-green-400 text-xl"></i>
+                        </div>
+                        <div>
+                            <h3 class="text-lg font-bold text-white">Paid Time Off</h3>
+                            <p class="text-sm text-gray-400">Annual leave balance</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="grid grid-cols-3 gap-4">
+                    <div class="text-center">
+                        <p class="text-2xl font-bold text-green-400">{{ allocation.paid_time_off.allocated }}</p>
+                        <p class="text-xs text-gray-400 mt-1">Allocated</p>
+                    </div>
+                    <div class="text-center">
+                        <p class="text-2xl font-bold text-blue-400">{{ allocation.paid_time_off.used }}</p>
+                        <p class="text-xs text-gray-400 mt-1">Used</p>
+                    </div>
+                    <div class="text-center">
+                        <p class="text-2xl font-bold text-white">{{ allocation.paid_time_off.available }}</p>
+                        <p class="text-xs text-gray-400 mt-1">Available</p>
+                    </div>
+                </div>
+                <div class="mt-4 bg-white/5 rounded-full h-2 overflow-hidden">
+                    <div class="bg-gradient-to-r from-green-500 to-green-600 h-full transition-all duration-500" 
+                         style="width: {{ (allocation.paid_time_off.used / allocation.paid_time_off.allocated * 100) if allocation.paid_time_off.allocated > 0 else 0 }}%"></div>
+                </div>
+            </div>
+
+            <!-- Sick Leave -->
+            <div class="bg-gradient-to-br from-red-500/10 to-red-600/5 backdrop-blur-xl border border-red-500/20 rounded-2xl p-6 shadow-lg glass-highlight">
+                <div class="flex items-center justify-between mb-4">
+                    <div class="flex items-center gap-3">
+                        <div class="w-12 h-12 bg-red-500/20 rounded-xl flex items-center justify-center">
+                            <i class="fas fa-notes-medical text-red-400 text-xl"></i>
+                        </div>
+                        <div>
+                            <h3 class="text-lg font-bold text-white">Sick Leave</h3>
+                            <p class="text-sm text-gray-400">Medical leave balance</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="grid grid-cols-3 gap-4">
+                    <div class="text-center">
+                        <p class="text-2xl font-bold text-red-400">{{ allocation.sick_leave.allocated }}</p>
+                        <p class="text-xs text-gray-400 mt-1">Allocated</p>
+                    </div>
+                    <div class="text-center">
+                        <p class="text-2xl font-bold text-blue-400">{{ allocation.sick_leave.used }}</p>
+                        <p class="text-xs text-gray-400 mt-1">Used</p>
+                    </div>
+                    <div class="text-center">
+                        <p class="text-2xl font-bold text-white">{{ allocation.sick_leave.available }}</p>
+                        <p class="text-xs text-gray-400 mt-1">Available</p>
+                    </div>
+                </div>
+                <div class="mt-4 bg-white/5 rounded-full h-2 overflow-hidden">
+                    <div class="bg-gradient-to-r from-red-500 to-red-600 h-full transition-all duration-500" 
+                         style="width: {{ (allocation.sick_leave.used / allocation.sick_leave.allocated * 100) if allocation.sick_leave.allocated > 0 else 0 }}%"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <!-- Leave Requests List -->
-    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pb-8">
         <div class="bg-gradient-to-br from-white/10 to-white/5 backdrop-blur-xl border border-white/10 shadow-lg rounded-2xl p-6 glass-highlight">
         
         {% if leaves %}
@@ -35,7 +106,7 @@
                             <div class="flex items-start gap-3">
                                 <!-- Leave Type Icon -->
                                 <div class="flex-shrink-0">
-                                    {% if leave.leave_type == 'Paid Leave' %}
+                                    {% if leave.leave_type == 'Paid Time Off' or leave.leave_type == 'Paid Leave' %}
                                         <div class="w-12 h-12 bg-green-100 rounded-xl flex items-center justify-center">
                                             <span class="text-2xl">💰</span>
                                         </div>

@@ -37,24 +37,6 @@
 
                 <!-- Right: User Avatar with Status & Dropdown -->
                 <div class="flex items-center space-x-4">
-                    <!-- Check In/Out Controls (For Current User Only) -->
-                    <div class="hidden lg:flex items-center space-x-2">
-                        {% if today_record and today_record.check_in and not today_record.check_out %}
-                        <span class="text-sm text-gray-400">Since {{ today_record.check_in.strftime('%I:%M %p') }}</span>
-                        {% endif %}
-                        
-                        <button id="btn-checkin" 
-                                class="px-4 py-2 rounded-lg font-medium text-white bg-gradient-to-r from-green-500 to-emerald-600 hover:brightness-110 transition disabled:opacity-40 disabled:cursor-not-allowed text-sm"
-                                {% if not action_state.can_check_in %}disabled{% endif %}>
-                            <i class="fas fa-sign-in-alt mr-1"></i>Check In
-                        </button>
-                        <button id="btn-checkout" 
-                                class="px-4 py-2 rounded-lg font-medium text-white bg-gradient-to-r from-blue-500 to-blue-600 hover:brightness-110 transition disabled:opacity-40 disabled:cursor-not-allowed text-sm"
-                                {% if not action_state.can_check_out %}disabled{% endif %}>
-                            <i class="fas fa-sign-out-alt mr-1"></i>Check Out
-                        </button>
-                    </div>
-
                     <!-- User Avatar with Dropdown -->
                     <div class="relative" x-data="{ open: false }">
                         <button @click="open = !open" 
@@ -112,23 +94,6 @@
 
     <!-- Employee Cards Grid -->
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <!-- Mobile Check In/Out -->
-        <div class="lg:hidden mb-6 flex items-center justify-center space-x-3">
-            {% if today_record and today_record.check_in and not today_record.check_out %}
-            <span class="text-sm text-gray-400">Since {{ today_record.check_in.strftime('%I:%M %p') }}</span>
-            {% endif %}
-            <button id="btn-checkin-mobile" 
-                    class="px-4 py-2 rounded-lg font-medium text-white bg-gradient-to-r from-green-500 to-emerald-600 hover:brightness-110 transition disabled:opacity-40 disabled:cursor-not-allowed text-sm"
-                    {% if not action_state.can_check_in %}disabled{% endif %}>
-                <i class="fas fa-sign-in-alt mr-1"></i>Check In
-            </button>
-            <button id="btn-checkout-mobile" 
-                    class="px-4 py-2 rounded-lg font-medium text-white bg-gradient-to-r from-blue-500 to-blue-600 hover:brightness-110 transition disabled:opacity-40 disabled:cursor-not-allowed text-sm"
-                    {% if not action_state.can_check_out %}disabled{% endif %}>
-                <i class="fas fa-sign-out-alt mr-1"></i>Check Out
-            </button>
-        </div>
-
         <!-- Header -->
         <div class="mb-6">
             <h2 class="text-2xl font-bold text-white mb-2">Team Members</h2>
@@ -201,65 +166,6 @@
         </div>
     </div>
 </div>
-
-<!-- Check In/Out Script -->
-<script>
-document.addEventListener('DOMContentLoaded', function() {
-    const buttons = ['btn-checkin', 'btn-checkout', 'btn-checkin-mobile', 'btn-checkout-mobile'];
-    
-    buttons.forEach(id => {
-        const btn = document.getElementById(id);
-        if (!btn) return;
-        
-        btn.addEventListener('click', async function(e) {
-            e.preventDefault();
-            
-            const action = id.includes('checkin') ? 'check-in' : 'check-out';
-            const url = `/attendance/${action}`;
-            
-            // Disable all buttons during request
-            buttons.forEach(btnId => {
-                const b = document.getElementById(btnId);
-                if (b) b.disabled = true;
-            });
-            
-            try {
-                const res = await fetch(url, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'X-Requested-With': 'XMLHttpRequest'
-                    },
-                    credentials: 'same-origin'
-                });
-                
-                const data = await res.json();
-                
-                if (data.success) {
-                    // Show success message
-                    alert(data.message);
-                    // Reload page to update status
-                    window.location.reload();
-                } else {
-                    alert(data.message || 'Action failed');
-                    // Re-enable appropriate buttons
-                    buttons.forEach(btnId => {
-                        const b = document.getElementById(btnId);
-                        if (b) b.disabled = false;
-                    });
-                }
-            } catch (error) {
-                console.error('Error:', error);
-                alert('An error occurred. Please try again.');
-                buttons.forEach(btnId => {
-                    const b = document.getElementById(btnId);
-                    if (b) b.disabled = false;
-                });
-            }
-        });
-    });
-});
-</script>
 
 <!-- Alpine.js for Dropdown (if not already included) -->
 <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>

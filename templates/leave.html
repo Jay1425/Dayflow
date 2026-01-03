@@ -1,6 +1,6 @@
 {% extends "base.html" %}
 
-{% block title %}Leave Management - HRMS{% endblock %}
+{% block title %}Time Off Management - HRMS{% endblock %}
 
 {% block content %}
 <div class="min-h-screen">
@@ -10,8 +10,8 @@
             <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
                 <div class="animate-fade-in">
                     <p class="text-sm uppercase tracking-wide text-primary-300 mb-1">Employee Portal</p>
-                    <h1 class="text-3xl font-bold text-white">Leave Management</h1>
-                    <p class="text-gray-300">Apply for leave and track your requests effortlessly.</p>
+                    <h1 class="text-3xl font-bold text-white">Time Off Management</h1>
+                    <p class="text-gray-300">Request time off and track your applications effortlessly.</p>
                 </div>
                 <div class="flex items-center space-x-3">
                     <span class="px-4 py-2 rounded-full bg-white/10 text-white border border-white/10 backdrop-blur-sm">
@@ -31,11 +31,11 @@
                 <nav class="flex -mb-px">
                     <button onclick="switchTab('apply')" id="tab-apply" 
                         class="tab-btn px-8 py-4 text-sm font-medium border-b-2 border-primary-500 text-primary-300 transition-colors">
-                        <i class="fas fa-paper-plane mr-2"></i>Apply for Leave
+                        <i class="fas fa-paper-plane mr-2"></i>Request Time Off
                     </button>
                     <button onclick="switchTab('history')" id="tab-history" 
                         class="tab-btn px-8 py-4 text-sm font-medium border-b-2 border-transparent text-gray-400 hover:text-gray-200 hover:border-white/20 transition-colors">
-                        <i class="fas fa-history mr-2"></i>My Leave Requests
+                        <i class="fas fa-history mr-2"></i>My Time Off Requests
                     </button>
                 </nav>
             </div>
@@ -44,18 +44,18 @@
         <!-- Apply for Leave Tab -->
         <div id="content-apply" class="tab-content">
             <div class="rounded-2xl p-8 bg-gradient-to-br from-white/10 to-white/5 backdrop-blur-xl border border-white/10 shadow-lg glass-highlight">
-                <h2 class="text-2xl font-bold text-white mb-6">Apply for Leave</h2>
+                <h2 class="text-2xl font-bold text-white mb-6">Request Time Off</h2>
                 
                 <form id="leaveForm" class="space-y-6">
                     <!-- Leave Type -->
                     <div>
                         <label for="leave_type" class="block text-sm font-medium text-gray-300 mb-2">
-                            Leave Type <span class="text-red-400">*</span>
+                            Time Off Type <span class="text-red-400">*</span>
                         </label>
                         <select id="leave_type" name="leave_type" required
                             class="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-lg text-white focus:ring-2 focus:ring-primary-500 focus:border-transparent backdrop-blur-sm">
-                            <option value="" class="bg-gray-800">Select leave type</option>
-                            <option value="Paid Leave" class="bg-gray-800">Paid Leave</option>
+                            <option value="" class="bg-gray-800">Select time off type</option>
+                            <option value="Paid Time Off" class="bg-gray-800">Paid Time Off</option>
                             <option value="Sick Leave" class="bg-gray-800">Sick Leave</option>
                             <option value="Unpaid Leave" class="bg-gray-800">Unpaid Leave</option>
                         </select>

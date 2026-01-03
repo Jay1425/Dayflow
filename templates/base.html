@@ -386,6 +386,7 @@
                 <!-- Desktop Navigation -->
                 <div class="hidden md:block">
                     <div class="ml-10 flex items-baseline space-x-6">
+                        {% if not session.user %}
                         <a href="{{ url_for('home') }}" 
                            class="group relative inline-flex items-center gap-2 px-4 py-2 rounded-lg border border-transparent text-gray-300 hover:text-white hover:bg-white/10 transition-all duration-300
                                   after:content-[''] after:absolute after:left-4 after:right-4 after:bottom-1 after:h-0.5 after:origin-left after:scale-x-0 after:bg-gradient-to-r after:from-primary-500 after:to-accent-500 after:transition-transform after:duration-300 hover:after:scale-x-100
@@ -398,6 +399,7 @@
                                   {% if request.endpoint == 'about' %}text-primary-400 bg-primary-500/15 border-primary-500/20 shadow-lg{% endif %}">
                             <i class="fas fa-info-circle text-sm opacity-90 group-hover:scale-110 transition-transform"></i>About
                         </a>
+                        {% endif %}
                         {% if session.user %}
                             <!-- Employees -->
                             <a href="{{ url_for('employees') }}" 
@@ -504,6 +506,7 @@
         <!-- Mobile Navigation -->
         <div id="mobile-menu" class="md:hidden hidden bg-white/5 backdrop-blur-xl border-t border-white/10 shadow-lg shadow-black/20 animate-slide-up glass-highlight">
             <div class="px-4 pt-2 pb-3 space-y-1">
+                {% if not session.user %}
                 <a href="{{ url_for('home') }}" 
                    class="group block px-4 py-3 rounded-xl border-l-4 border-transparent text-gray-300 hover:text-white hover:bg-white/10 transition-all duration-300
                           {% if request.endpoint == 'home' %}text-primary-400 bg-primary-500/15 border-primary-500{% endif %}">
@@ -514,6 +517,7 @@
                           {% if request.endpoint == 'about' %}text-primary-400 bg-primary-500/15 border-primary-500{% endif %}">
                     <i class="fas fa-info-circle mr-3 text-primary-400 group-hover:scale-110 transition-transform"></i>About
                 </a>
+                {% endif %}
                 {% if session.user %}
                     <a href="{{ url_for('employees') }}" 
                        class="group block px-4 py-3 rounded-xl border-l-4 border-transparent text-gray-300 hover:text-white hover:bg-white/10 transition-all duration-300

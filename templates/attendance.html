@@ -9,9 +9,9 @@
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
             <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
                 <div class="animate-fade-in">
-                    <p class="text-sm uppercase tracking-wide text-primary-300 mb-1">Attendance</p>
-                    <h1 class="text-3xl font-bold text-white">Track your day, effortlessly.</h1>
-                    <p class="text-gray-300">Check in, check out, and see your weekly attendance at a glance.</p>
+                    <p class="text-sm uppercase tracking-wide text-primary-300 mb-1">Attendance Tracking</p>
+                    <h1 class="text-3xl font-bold text-white">Track Your Workday</h1>
+                    <p class="text-gray-300">Check in, track your time, and check out with live timer</p>
                 </div>
                 <div class="flex items-center space-x-3">
                     <span class="px-4 py-2 rounded-full bg-white/10 text-white border border-white/10 backdrop-blur-sm" id="attendance-date">{{ today_summary.date_label }}</span>
@@ -31,40 +31,61 @@
                     <div class="flex items-center justify-between mb-4">
                         <div>
                             <h2 class="text-xl font-semibold text-white">Today's Attendance</h2>
-                            <p class="text-gray-400 text-sm">One check-in and one check-out per day. The system computes status automatically.</p>
+                            <p class="text-gray-400 text-sm">Check in to start tracking your work hours</p>
                         </div>
-                        <div id="attendance-message" class="text-sm text-primary-300"></div>
+                        <div id="attendance-message" class="text-sm text-green-400"></div>
                     </div>
 
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
                         <div class="p-4 rounded-xl bg-white/5 border border-white/10">
-                            <p class="text-gray-400 text-sm">Check In</p>
+                            <p class="text-gray-400 text-sm mb-1">Check In</p>
                             <p id="attendance-checkin-time" class="text-2xl font-semibold text-white">{{ today_summary.check_in }}</p>
                         </div>
                         <div class="p-4 rounded-xl bg-white/5 border border-white/10">
-                            <p class="text-gray-400 text-sm">Check Out</p>
+                            <p class="text-gray-400 text-sm mb-1">Check Out</p>
                             <p id="attendance-checkout-time" class="text-2xl font-semibold text-white">{{ today_summary.check_out }}</p>
                         </div>
                         <div class="p-4 rounded-xl bg-white/5 border border-white/10">
-                            <p class="text-gray-400 text-sm">Duration</p>
-                            <p id="attendance-duration" class="text-2xl font-semibold text-white">{{ today_summary.duration }}</p>
+                            <p class="text-gray-400 text-sm mb-1">Elapsed Time</p>
+                            <p id="live-timer" class="text-2xl font-semibold text-green-400">
+                                {% if today_summary.check_in != '—' and today_summary.check_out == '—' %}
+                                <span class="animate-pulse">⏱️ Calculating...</span>
+                                {% else %}
+                                {{ today_summary.duration }}
+                                {% endif %}
+                            </p>
                         </div>
                         <div class="p-4 rounded-xl bg-white/5 border border-white/10">
-                            <p class="text-gray-400 text-sm">Status</p>
+                            <p class="text-gray-400 text-sm mb-1">Status</p>
                             <p id="attendance-status" class="text-2xl font-semibold text-white">{{ today_summary.status }}</p>
                         </div>
                     </div>
 
-                    <div class="flex flex-wrap gap-3">
-                        <button type="button" id="btn-checkin" data-attendance-action="checkin" class="px-5 py-3 rounded-xl font-semibold text-white bg-gradient-to-r from-primary-500 to-primary-600 hover:brightness-110 transition disabled:opacity-40 disabled:cursor-not-allowed"
+                    <!-- Action Buttons -->
+                    <div class="flex flex-wrap gap-3 mb-4">
+                        <button type="button" id="btn-checkin" 
+                                class="px-6 py-3 rounded-xl font-semibold text-white bg-gradient-to-r from-green-500 to-emerald-600 hover:brightness-110 transition-all duration-300 disabled:opacity-40 disabled:cursor-not-allowed shadow-lg hover:shadow-xl"
                                 {% if not action_state.can_check_in %}disabled{% endif %}>
                             <i class="fas fa-play mr-2"></i> Check In
                         </button>
-                        <button type="button" id="btn-checkout" data-attendance-action="checkout" class="px-5 py-3 rounded-xl font-semibold text-white bg-gradient-to-r from-green-500 to-emerald-600 hover:brightness-110 transition disabled:opacity-40 disabled:cursor-not-allowed"
+                        <button type="button" id="btn-checkout" 
+                                class="px-6 py-3 rounded-xl font-semibold text-white bg-gradient-to-r from-blue-500 to-blue-600 hover:brightness-110 transition-all duration-300 disabled:opacity-40 disabled:cursor-not-allowed shadow-lg hover:shadow-xl"
                                 {% if not action_state.can_check_out %}disabled{% endif %}>
                             <i class="fas fa-stop mr-2"></i> Check Out
                         </button>
-                        <span class="text-gray-400 text-sm">Allowed: one check-in and one check-out per day.</span>
+                    </div>
+
+                    <!-- Timer Info -->
+                    <div id="timer-info" class="bg-gradient-to-r from-green-500/10 to-emerald-500/10 border border-green-500/20 rounded-xl p-4 {% if today_summary.check_in == '—' or today_summary.check_out != '—' %}hidden{% endif %}">
+                        <div class="flex items-center gap-3">
+                            <div class="w-12 h-12 rounded-full bg-green-500/20 flex items-center justify-center animate-pulse">
+                                <i class="fas fa-clock text-green-400 text-xl"></i>
+                            </div>
+                            <div class="flex-1">
+                                <p class="text-green-300 font-semibold mb-1">Timer Running</p>
+                                <p class="text-gray-400 text-sm">You checked in at <span id="checkin-time-display">{{ today_summary.check_in }}</span></p>
+                            </div>
+                        </div>
                     </div>
                 </div>
 
@@ -100,24 +121,162 @@
             <!-- Right: Tips / Notes -->
             <div class="space-y-6">
                 <div class="rounded-2xl p-6 bg-gradient-to-br from-white/10 to-white/5 backdrop-blur-xl border border-white/10 shadow-lg glass-highlight">
-                    <h3 class="text-lg font-semibold text-white mb-3">Rules</h3>
+                    <h3 class="text-lg font-semibold text-white mb-3">How It Works</h3>
                     <ul class="space-y-2 text-gray-300 text-sm">
-                        <li>• One check-in and one check-out per day.</li>
-                        <li>• Status is auto-computed from your work duration.</li>
-                        <li>• No manual edits to attendance entries.</li>
-                        <li>• Uses your current logged-in session; no re-auth needed.</li>
+                        <li>• Click <strong>Check In</strong> when you start work</li>
+                        <li>• Live timer shows your elapsed time</li>
+                        <li>• Click <strong>Check Out</strong> when done</li>
+                        <li>• One check-in and check-out per day</li>
                     </ul>
+                    <a href="{{ url_for('attendance_list') }}" class="mt-4 inline-flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-primary-600 to-accent-600 text-white rounded-lg hover:from-primary-700 hover:to-accent-700 transition-all duration-300 text-sm font-semibold w-full justify-center">
+                        <i class="fas fa-list"></i>
+                        View Full Attendance Records
+                    </a>
                 </div>
                 <div class="rounded-2xl p-6 bg-gradient-to-br from-white/10 to-white/5 backdrop-blur-xl border border-white/10 shadow-lg glass-highlight">
-                    <h3 class="text-lg font-semibold text-white mb-3">Planned Extensions</h3>
+                    <h3 class="text-lg font-semibold text-white mb-3">Work Status</h3>
                     <ul class="space-y-2 text-gray-300 text-sm">
-                        <li>• Leave approvals will override daily status.</li>
-                        <li>• Admin/HR dashboard for attendance oversight.</li>
-                        <li>• Reports and analytics for productivity insights.</li>
+                        <li>• <span class="text-green-400">≥ 8 hours</span> = Present</li>
+                        <li>• <span class="text-orange-400">≥ 4 hours</span> = Half Day</li>
+                        <li>• <span class="text-amber-400">&lt; 4 hours</span> = Short Shift</li>
+                        <li>• <span class="text-blue-400">Approved Leave</span> = On Leave</li>
                     </ul>
                 </div>
             </div>
         </div>
     </div>
 </div>
+
+<script>
+// Live Timer for Check-In Progress
+let timerInterval;
+let checkInTimestamp = null;
+
+// Check if user is already checked in
+{% if today_summary.check_in != '—' and today_summary.check_out == '—' %}
+    // Parse check-in time from backend
+    const checkinStr = '{{ today_summary.check_in }}';
+    const today = new Date();
+    const [time, meridiem] = checkinStr.split(' ');
+    const [hours, minutes, seconds] = time.split(':');
+    let hour24 = parseInt(hours);
+    
+    if (meridiem === 'PM' && hour24 !== 12) hour24 += 12;
+    if (meridiem === 'AM' && hour24 === 12) hour24 = 0;
+    
+    checkInTimestamp = new Date(today.getFullYear(), today.getMonth(), today.getDate(), hour24, parseInt(minutes), seconds || 0);
+    startTimer();
+{% endif %}
+
+function startTimer() {
+    if (!checkInTimestamp) return;
+    
+    timerInterval = setInterval(() => {
+        const now = new Date();
+        const diff = now - checkInTimestamp;
+        
+        const totalSeconds = Math.floor(diff / 1000);
+        const hours = Math.floor(totalSeconds / 3600);
+        const minutes = Math.floor((totalSeconds % 3600) / 60);
+        const seconds = totalSeconds % 60;
+        
+        const timerDisplay = `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
+        
+        const timerElement = document.getElementById('live-timer');
+        if (timerElement) {
+            timerElement.innerHTML = `<span class="text-green-400">${timerDisplay}</span>`;
+        }
+    }, 1000);
+}
+
+function stopTimer() {
+    if (timerInterval) {
+        clearInterval(timerInterval);
+        timerInterval = null;
+    }
+}
+
+// Check-In Button Handler
+document.getElementById('btn-checkin')?.addEventListener('click', async function() {
+    this.disabled = true;
+    
+    try {
+        const response = await fetch('/attendance/check-in', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            credentials: 'same-origin'
+        });
+        
+        const data = await response.json();
+        
+        if (data.success) {
+            document.getElementById('attendance-message').textContent = '✓ ' + data.message;
+            document.getElementById('attendance-checkin-time').textContent = data.check_in_time;
+            
+            // Start timer
+            checkInTimestamp = new Date(data.timestamp);
+            startTimer();
+            
+            // Update UI
+            document.getElementById('btn-checkout').disabled = false;
+            document.getElementById('timer-info')?.classList.remove('hidden');
+            document.getElementById('checkin-time-display').textContent = data.check_in_time;
+            document.getElementById('attendance-status').textContent = 'In Progress';
+            
+            setTimeout(() => {
+                document.getElementById('attendance-message').textContent = '';
+            }, 3000);
+        } else {
+            alert(data.message);
+            this.disabled = false;
+        }
+    } catch (error) {
+        console.error('Error:', error);
+        alert('An error occurred. Please try again.');
+        this.disabled = false;
+    }
+});
+
+// Check-Out Button Handler
+document.getElementById('btn-checkout')?.addEventListener('click', async function() {
+    this.disabled = true;
+    
+    try {
+        const response = await fetch('/attendance/check-out', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            credentials: 'same-origin'
+        });
+        
+        const data = await response.json();
+        
+        if (data.success) {
+            stopTimer();
+            
+            document.getElementById('attendance-message').textContent = '✓ ' + data.message;
+            document.getElementById('attendance-checkout-time').textContent = data.check_out_time;
+            document.getElementById('live-timer').textContent = data.duration;
+            document.getElementById('attendance-status').textContent = data.status;
+            
+            // Hide timer info
+            document.getElementById('timer-info')?.classList.add('hidden');
+            
+            setTimeout(() => {
+                document.getElementById('attendance-message').textContent = '';
+            }, 3000);
+        } else {
+            alert(data.message);
+            this.disabled = false;
+        }
+    } catch (error) {
+        console.error('Error:', error);
+        alert('An error occurred. Please try again.');
+        this.disabled = false;
+    }
+});
+</script>
 {% endblock %}

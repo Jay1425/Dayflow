@@ -22,7 +22,7 @@ app = Flask(__name__)
 app.secret_key = os.getenv('SECRET_KEY', 'fdbdfnhbidfhibfhijmhikwsgoihgepwsofbfgbjfghnirfhsjr')
 
 # Company Configuration
-COMPANY_CODE = os.getenv('COMPANY_CODE', 'OI')  # Odoo Instance / Your company code
+COMPANY_CODE = os.getenv('COMPANY_CODE', 'DF')  # Dayflow company code
 
 # Email Configuration
 app.config['MAIL_SERVER'] = os.getenv('MAIL_SERVER', 'smtp.gmail.com')
@@ -48,13 +48,25 @@ mail = Mail(app)
 
 # ============= HELPER FUNCTIONS =============
 
-def generate_login_id(fullname, year_of_joining):
+def generate_login_id(fullname, year_of_joining, company_name=None):
     """
-    Generate login ID: OIJARA20260001
-    Format: [CompanyCode][First2LettersFirstName][First2LettersLastName][Year][Serial]
-    Example: OIJARA20260001 (OI + JA + RA + 2026 + 0001)
+    Generate login ID: DFJARA20260001 or ODJARA20260001
+    Format: [CompanyCode(2 letters)][First2LettersFirstName][First2LettersLastName][Year][Serial]
+    Example: DFJARA20260001 (DF + JA + RA + 2026 + 0001) for Dayflow company, Jay Raychura
+    Example: ODJARA20260001 (OD + JA + RA + 2026 + 0001) for Odoo company, Jay Raychura
+    
+    Args:
+        fullname: Full name of the user
+        year_of_joining: Year the user joined
+        company_name: Company name (optional). If not provided, uses COMPANY_CODE from env
     """
     names = fullname.strip().split()
+    
+    # Get company code (first 2 letters of company name)
+    if company_name:
+        company_code = company_name.strip()[:2].upper()
+    else:
+        company_code = COMPANY_CODE
     
     # Get first 2 letters of first name (or pad with X if too short)
     first_letters = (names[0][:2].upper() if len(names) > 0 and len(names[0]) >= 2 
@@ -70,7 +82,7 @@ def generate_login_id(fullname, year_of_joining):
     count = User.query.filter_by(year_of_joining=year_of_joining).count()
     serial = str(count + 1).zfill(4)
     
-    login_id = f"{COMPANY_CODE}{first_letters}{last_letters}{year_of_joining}{serial}"
+    login_id = f"{company_code}{first_letters}{last_letters}{year_of_joining}{serial}"
     return login_id
 
 
@@ -195,6 +207,35 @@ def login_required(f):
     return decorated_function
 
 
+def validate_password(password):
+    """
+    Validate password security requirements:
+    - Minimum 8 characters
+    - At least one uppercase letter
+    - At least one lowercase letter
+    - At least one digit
+    - At least one special character
+    """
+    import re
+    
+    if len(password) < 8:
+        return False, "Password must be at least 8 characters long."
+    
+    if not re.search(r'[A-Z]', password):
+        return False, "Password must contain at least one uppercase letter."
+    
+    if not re.search(r'[a-z]', password):
+        return False, "Password must contain at least one lowercase letter."
+    
+    if not re.search(r'\d', password):
+        return False, "Password must contain at least one digit."
+    
+    if not re.search(r'[!@#$%^&*(),.?":{}|<>]', password):
+        return False, "Password must contain at least one special character (!@#$%^&*(),.?\":{}|<>)."
+    
+    return True, "Password is strong."
+
+
 # User model
 class User(db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -204,6 +245,7 @@ class User(db.Model):
     email = db.Column(db.String(120), unique=True, nullable=False)
     password_hash = db.Column(db.String(120), nullable=False)
     role = db.Column(db.String(20), default='Employee')  # Admin, HR Officer, Employee
+    company = db.Column(db.String(100), nullable=True)  # Company name (e.g., Dayflow, Odoo)
     year_of_joining = db.Column(db.Integer, nullable=True)
     is_first_login = db.Column(db.Boolean, default=True)
     email_verified = db.Column(db.Boolean, default=False)  # Email OTP verification status
@@ -536,8 +578,16 @@ def login():
             
             flash('Login successful!', 'success')
             
-            # All users land on Employees page after login
-            return redirect(url_for('employees'))
+            # Redirect to attendance page for employees to check-in
+            if user.role == 'Employee':
+                return redirect(url_for('attendance'))
+            # Admin/HR go to their respective dashboards
+            elif user.role == 'Admin':
+                return redirect(url_for('admin_dashboard'))
+            elif user.role == 'HR Officer':
+                return redirect(url_for('hr_dashboard'))
+            else:
+                return redirect(url_for('employees'))
         else:
             flash('Invalid credentials. Please try again.', 'error')
     
@@ -550,6 +600,7 @@ def signup():
     if request.method == 'POST':
         fullname = request.form.get('fullname', '').strip()
         email = request.form.get('email', '').strip()
+        company = request.form.get('company', '').strip()
         role = request.form.get('role', 'Employee')
         year_of_joining = int(request.form.get('year_of_joining', datetime.now().year))
         
@@ -567,15 +618,23 @@ def signup():
             return redirect(url_for('signup'))
         
         # Basic validation
-        if not all([fullname, email]):
+        if not all([fullname, email, company]):
             flash('Please fill in all required fields.', 'error')
         elif User.query.filter_by(email=email).first():
             flash('Email already registered. Please use another.', 'error')
         else:
             # Generate login credentials
-            login_id = generate_login_id(fullname, year_of_joining)
+            login_id = generate_login_id(fullname, year_of_joining, company)
             temp_password = generate_temp_password()
             username = login_id  # Use login_id as username
+            
+            # Validate password security
+            is_valid, error_msg = validate_password(temp_password)
+            if not is_valid:
+                # Regenerate until we get a secure password
+                while not is_valid:
+                    temp_password = generate_temp_password()
+                    is_valid, error_msg = validate_password(temp_password)
             
             # Generate OTP for email verification
             otp = generate_otp()
@@ -586,6 +645,7 @@ def signup():
                 username=username,
                 login_id=login_id,
                 email=email,
+                company=company,
                 role=role,
                 year_of_joining=year_of_joining,
                 is_first_login=True,
@@ -973,6 +1033,41 @@ def summarize_attendance(record: Attendance | None):
 @app.route('/attendance')
 @login_required
 def attendance():
+    """Attendance Tracking Page with Check-In/Check-Out"""
+    if 'user_id' not in session:
+        flash('Please login to access attendance.', 'error')
+        return redirect(url_for('login'))
+
+    user = User.query.get(session['user_id'])
+    if not user:
+        session.clear()
+        flash('User not found. Please login again.', 'error')
+        return redirect(url_for('login'))
+
+    # Get today's attendance record
+    today_record = get_today_attendance(user.id)
+    
+    # Build today's summary
+    today_summary = summarize_attendance(today_record)
+    
+    # Build weekly overview
+    weekly_overview = build_weekly_overview(user.id)
+    
+    # Build action state (can check in/out?)
+    action_state = build_action_state(today_record)
+    
+    return render_template(
+        'attendance.html',
+        user=user,
+        today_summary=today_summary,
+        weekly_overview=weekly_overview,
+        action_state=action_state
+    )
+
+
+@app.route('/attendance/list')
+@login_required
+def attendance_list():
     """Attendance List View - Role-based (Employee: Monthly | Admin/HR: Daily)"""
     if 'user_id' not in session:
         flash('Please login to access attendance.', 'error')
@@ -988,9 +1083,148 @@ def attendance():
     view_date = request.args.get('date')
     view_month = request.args.get('month')
     search_query = request.args.get('search', '').strip()
+    employee_id = request.args.get('employee_id')  # For admin/HR viewing specific employee
 
     # Role-based view logic
     if user.role in ['Admin', 'HR Officer']:
+        # Check if viewing specific employee's monthly attendance
+        if employee_id:
+            try:
+                view_employee = User.query.get(int(employee_id))
+                if not view_employee:
+                    flash('Employee not found.', 'error')
+                    return redirect(url_for('attendance_list'))
+                
+                # Show monthly view for this employee
+                if view_month:
+                    try:
+                        target_month = datetime.strptime(view_month, '%Y-%m').date()
+                    except ValueError:
+                        target_month = date.today().replace(day=1)
+                else:
+                    target_month = date.today().replace(day=1)
+
+                # Get month range
+                if target_month.month == 12:
+                    next_month = target_month.replace(year=target_month.year + 1, month=1)
+                else:
+                    next_month = target_month.replace(month=target_month.month + 1)
+
+                # Get all attendance records for the month for this employee
+                records = Attendance.query.filter(
+                    Attendance.user_id == view_employee.id,
+                    Attendance.date >= target_month,
+                    Attendance.date < next_month
+                ).order_by(Attendance.date.desc()).all()
+
+                # Get approved leaves for the month
+                leaves = Leave.query.filter(
+                    Leave.user_id == view_employee.id,
+                    Leave.status == 'Approved',
+                    Leave.start_date < next_month,
+                    Leave.end_date >= target_month
+                ).all()
+
+                # Build leave dates set
+                leave_dates = set()
+                for leave in leaves:
+                    current = max(leave.start_date, target_month)
+                    end = min(leave.end_date, next_month - timedelta(days=1))
+                    while current <= end:
+                        leave_dates.add(current)
+                        current += timedelta(days=1)
+
+                # Build attendance data
+                attendance_data = []
+                days_present = 0
+                total_working_days = 0
+                
+                current = target_month
+                while current < next_month:
+                    total_working_days += 1
+                    
+                    record = next((r for r in records if r.date == current), None)
+                    
+                    if current in leave_dates:
+                        attendance_data.append({
+                            'date': current.strftime('%d %b, %Y'),
+                            'check_in': 'On Leave',
+                            'check_out': '—',
+                            'work_hours': '—',
+                            'extra_hours': '—',
+                            'status': 'On Leave'
+                        })
+                    elif record and record.check_in:
+                        check_in_display = record.check_in.strftime('%I:%M %p')
+                        
+                        if record.check_out:
+                            check_out_display = record.check_out.strftime('%I:%M %p')
+                            total_minutes = int((record.check_out - record.check_in).total_seconds() / 60)
+                            
+                            hours = total_minutes // 60
+                            minutes = total_minutes % 60
+                            work_hours_display = f'{hours}h {minutes}m'
+                            
+                            if total_minutes > 480:
+                                extra_minutes = total_minutes - 480
+                                extra_h = extra_minutes // 60
+                                extra_m = extra_minutes % 60
+                                extra_hours_display = f'{extra_h}h {extra_m}m'
+                            else:
+                                extra_hours_display = '0h'
+                            
+                            status = 'Present'
+                            days_present += 1
+                        else:
+                            check_out_display = '—'
+                            work_hours_display = '—'
+                            extra_hours_display = '—'
+                            status = 'In Progress'
+
+                        attendance_data.append({
+                            'date': current.strftime('%d %b, %Y'),
+                            'check_in': check_in_display,
+                            'check_out': check_out_display,
+                            'work_hours': work_hours_display,
+                            'extra_hours': extra_hours_display,
+                            'status': status
+                        })
+                    else:
+                        attendance_data.append({
+                            'date': current.strftime('%d %b, %Y'),
+                            'check_in': '—',
+                            'check_out': '—',
+                            'work_hours': '—',
+                            'extra_hours': '—',
+                            'status': 'Absent'
+                        })
+
+                    current += timedelta(days=1)
+
+                # Previous and next month navigation
+                if target_month.month == 1:
+                    prev_month = target_month.replace(year=target_month.year - 1, month=12)
+                else:
+                    prev_month = target_month.replace(month=target_month.month - 1)
+
+                return render_template(
+                    'attendance_list.html',
+                    user=user,
+                    view_type='employee_monthly',
+                    view_employee=view_employee,
+                    target_month=target_month,
+                    attendance_data=attendance_data,
+                    total_working_days=total_working_days,
+                    days_present=days_present,
+                    leaves_count=len(leave_dates),
+                    prev_month=prev_month.strftime('%Y-%m'),
+                    next_month=next_month.strftime('%Y-%m'),
+                    current_month=target_month.strftime('%B %Y')
+                )
+            except ValueError:
+                flash('Invalid employee ID.', 'error')
+                return redirect(url_for('attendance_list'))
+        
         # ADMIN/HR VIEW: Daily view of all employees
         if view_date:
             try:
@@ -1062,7 +1296,13 @@ def attendance():
                     else:
                         extra_hours_display = '0h'
                     
-                    status = 'Present'
+                    # Determine status based on work hours
+                    if total_minutes >= 8 * 60:  # 8 hours or more
+                        status = 'Present'
+                    elif total_minutes >= 4 * 60:  # 4-8 hours
+                        status = 'Half Day'
+                    else:  # Less than 4 hours
+                        status = 'Short Shift'
                 else:
                     # Checked in but not checked out yet
                     check_out_display = '—'
@@ -1235,7 +1475,9 @@ def attendance():
 
 
 @app.route('/attendance/check-in', methods=['POST'])
+@login_required
 def attendance_check_in():
+    """Check-in endpoint for employees"""
     if 'user_id' not in session:
         return jsonify({'success': False, 'message': 'Unauthorized'}), 401
 
@@ -1257,14 +1499,15 @@ def attendance_check_in():
     return jsonify({
         'success': True,
         'message': 'Checked in successfully.',
-        'today': summarize_attendance(today_record),
-        'weekly': build_weekly_overview(user_id),
-        'actions': build_action_state(today_record)
+        'check_in_time': now.strftime('%I:%M:%S %p'),
+        'timestamp': now.isoformat()
     })
 
 
 @app.route('/attendance/check-out', methods=['POST'])
+@login_required
 def attendance_check_out():
+    """Check-out endpoint for employees"""
     if 'user_id' not in session:
         return jsonify({'success': False, 'message': 'Unauthorized'}), 401
 
@@ -1277,16 +1520,23 @@ def attendance_check_out():
     if today_record.check_out:
         return jsonify({'success': False, 'message': 'Already checked out today.'}), 400
 
-    today_record.check_out = datetime.now()
+    now = datetime.now()
+    today_record.check_out = now
     today_record.compute_status()
     db.session.commit()
+
+    # Calculate duration
+    duration = now - today_record.check_in
+    total_minutes = int(duration.total_seconds() / 60)
+    hours = total_minutes // 60
+    minutes = total_minutes % 60
 
     return jsonify({
         'success': True,
         'message': 'Checked out successfully.',
-        'today': summarize_attendance(today_record),
-        'weekly': build_weekly_overview(user_id),
-        'actions': build_action_state(today_record)
+        'check_out_time': now.strftime('%I:%M:%S %p'),
+        'duration': f'{hours}h {minutes}m',
+        'status': today_record.status
     })
 
 
@@ -1452,7 +1702,43 @@ def my_leave_requests():
     # Get all leave requests for the current user, ordered by most recent
     leaves = Leave.query.filter_by(user_id=current_user.id).order_by(Leave.applied_on.desc()).all()
     
-    return render_template('my_leave_requests.html', user=current_user, leaves=leaves)
+    # Calculate allocation summary for current year
+    current_year = datetime.now().year
+    year_start = datetime(current_year, 1, 1).date()
+    
+    # Calculate days used per leave type (approved leaves only)
+    paid_used = db.session.query(db.func.sum(Leave.total_days)).filter(
+        Leave.user_id == current_user.id,
+        Leave.leave_type.in_(['Paid Time Off', 'Paid Leave']),
+        Leave.status == 'Approved',
+        Leave.start_date >= year_start
+    ).scalar() or 0
+    
+    sick_used = db.session.query(db.func.sum(Leave.total_days)).filter(
+        Leave.user_id == current_user.id,
+        Leave.leave_type == 'Sick Leave',
+        Leave.status == 'Approved',
+        Leave.start_date >= year_start
+    ).scalar() or 0
+    
+    # Standard allocation (can be customized per user in future)
+    paid_allocated = 20
+    sick_allocated = 10
+    
+    allocation = {
+        'paid_time_off': {
+            'allocated': paid_allocated,
+            'used': paid_used,
+            'available': paid_allocated - paid_used
+        },
+        'sick_leave': {
+            'allocated': sick_allocated,
+            'used': sick_used,
+            'available': sick_allocated - sick_used
+        }
+    }
+    
+    return render_template('my_leave_requests.html', user=current_user, leaves=leaves, allocation=allocation)
 
 
 @app.route('/leave/manage')
@@ -1479,7 +1765,37 @@ def leave_management():
         Leave.applied_on.desc()
     ).all()
     
-    return render_template('leave_management.html', user=current_user, leaves=leaves)
+    # Calculate organization-wide statistics for current year
+    current_year = datetime.now().year
+    year_start = datetime(current_year, 1, 1).date()
+    
+    # Total pending requests
+    pending_count = Leave.query.filter(
+        Leave.status == 'Pending',
+        Leave.start_date >= year_start
+    ).count()
+    
+    # Total approved days this year
+    total_approved_days = db.session.query(db.func.sum(Leave.total_days)).filter(
+        Leave.status == 'Approved',
+        Leave.start_date >= year_start
+    ).scalar() or 0
+    
+    # Employees on leave today
+    today = datetime.now().date()
+    on_leave_today = Leave.query.filter(
+        Leave.status == 'Approved',
+        Leave.start_date <= today,
+        Leave.end_date >= today
+    ).count()
+    
+    stats = {
+        'pending_requests': pending_count,
+        'approved_days': total_approved_days,
+        'on_leave_today': on_leave_today
+    }
+    
+    return render_template('leave_management.html', user=current_user, leaves=leaves, stats=stats)
 
 
 @app.route('/leave/approve/<int:leave_id>', methods=['POST'])
