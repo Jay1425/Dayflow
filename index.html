@@ -1,0 +1,346 @@
+{% extends "base.html" %}
+
+{% block title %}Home - HackathonApp{% endblock %}
+
+{% block content %}
+<!-- Hero Section with enhanced animations -->
+<section class="relative min-h-screen flex items-center overflow-hidden">
+    <!-- Enhanced Background Elements -->
+    <div class="absolute inset-0 z-0">
+        <!-- Animated gradient orbs -->
+        <div class="absolute top-20 left-20 w-80 h-80 bg-gradient-to-r from-primary-500/30 to-cyan-500/30 rounded-full mix-blend-multiply filter blur-3xl animate-float opacity-70"></div>
+        <div class="absolute top-40 right-20 w-80 h-80 bg-gradient-to-r from-accent-500/30 to-pink-500/30 rounded-full mix-blend-multiply filter blur-3xl animate-float opacity-70" style="animation-delay: 2s;"></div>
+        <div class="absolute bottom-20 left-40 w-80 h-80 bg-gradient-to-r from-blue-500/30 to-purple-500/30 rounded-full mix-blend-multiply filter blur-3xl animate-float opacity-70" style="animation-delay: 4s;"></div>
+        
+        <!-- Subtle grid pattern -->
+        <div class="absolute inset-0 opacity-10" style="background-image: radial-gradient(circle at 1px 1px, rgba(59, 130, 246, 0.3) 1px, transparent 0); background-size: 50px 50px;"></div>
+    </div>
+    
+    <div class="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-16 items-center">
+            <!-- Enhanced Hero Content -->
+            <div class="text-center lg:text-left">
+                <div class="animate-fade-in-up" style="animation-delay: 0.2s;">
+                    <h1 class="text-4xl sm:text-5xl lg:text-6xl font-bold mb-8 font-display leading-tight">
+                        Welcome to the 
+                        <span class="block bg-gradient-to-r from-primary-400 via-accent-500 to-cyan-400 bg-clip-text text-transparent animate-gradient-shift bg-300%">
+                            Future of Innovation
+                        </span>
+                    </h1>
+                </div>
+                
+                <div class="animate-fade-in-up" style="animation-delay: 0.4s;">
+                    <p class="text-lg sm:text-xl text-gray-300 mb-10 max-w-2xl leading-relaxed">
+                        Building tomorrow's solutions today. Join us in creating 
+                        <span class="text-primary-400 font-semibold">groundbreaking technology</span> 
+                        that makes a difference in the world.
+                    </p>
+                </div>
+                
+                <div class="animate-fade-in-up flex flex-col sm:flex-row gap-6 justify-center lg:justify-start" style="animation-delay: 0.6s;">
+                          <a data-ripple href="{{ url_for('about') }}" 
+                              class="group relative inline-flex items-center justify-center gap-2 px-8 py-4 rounded-xl font-semibold text-white
+                              bg-gradient-to-r from-primary-500 to-primary-600 hover:from-primary-600 hover:to-primary-700
+                              shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 active:translate-y-0 active:scale-95
+                              transition-all duration-300 overflow-hidden">
+                        <span class="relative z-10 flex items-center">
+                            <i class="fas fa-rocket mr-3 group-hover:animate-bounce text-lg"></i>
+                            Get Started
+                        </span>
+                        <div class="absolute inset-0 bg-gradient-to-r from-accent-500 to-cyan-500 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+                    </a>
+                          <a data-ripple href="#features" 
+                              class="group relative inline-flex items-center justify-center gap-2 px-8 py-4 rounded-xl font-semibold text-white
+                              bg-gradient-to-br from-white/10 to-white/5 hover:bg-white/10 backdrop-blur-xl border border-primary-500/30 hover:border-primary-500/60 glass-highlight
+                              shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 active:translate-y-0 active:scale-95
+                              transition-all duration-300 overflow-hidden">
+                        <i class="fas fa-play mr-3 group-hover:scale-110 transition-transform duration-300"></i>
+                        Learn More
+                        <div class="absolute inset-0 bg-gradient-to-r from-primary-500/20 to-accent-500/20 opacity-0 group-hover:opacity-100 transition-opacity duration-300 rounded-xl"></div>
+                    </a>
+                </div>
+                
+                <!-- Trust indicators -->
+                <div class="mt-12 animate-fade-in-up" style="animation-delay: 0.8s;">
+                    <p class="text-sm text-gray-500 mb-4">Trusted by innovators worldwide</p>
+                    <div class="flex flex-wrap justify-center lg:justify-start gap-8 opacity-60">
+                        <div class="flex items-center space-x-2">
+                            <i class="fas fa-check-circle text-green-400"></i>
+                            <span class="text-sm">24/7 Support</span>
+                        </div>
+                        <div class="flex items-center space-x-2">
+                            <i class="fas fa-shield-alt text-blue-400"></i>
+                            <span class="text-sm">Secure</span>
+                        </div>
+                        <div class="flex items-center space-x-2">
+                            <i class="fas fa-bolt text-yellow-400"></i>
+                            <span class="text-sm">Fast</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Enhanced Hero Visual -->
+            <div class="relative flex justify-center lg:justify-end animate-slide-in-right" style="animation-delay: 0.3s;">
+                <div class="relative w-96 h-96 lg:w-[28rem] lg:h-[28rem]">
+                    <!-- Floating Tech Icons -->
+                    <div class="absolute inset-0">
+                        <!-- Animated floating elements with enhanced effects -->
+                        <div class="absolute top-0 left-0 w-20 h-20 bg-gradient-to-br from-primary-400 to-primary-600 rounded-2xl flex items-center justify-center text-2xl text-white shadow-xl animate-float">
+                            <i class="fas fa-code"></i>
+                        </div>
+                        <div class="absolute top-0 right-0 w-20 h-20 bg-gradient-to-br from-accent-500 to-accent-600 rounded-2xl flex items-center justify-center text-2xl text-white shadow-xl animate-float" style="animation-delay: 1s;">
+                            <i class="fas fa-brain"></i>
+                        </div>
+                        <div class="absolute bottom-0 left-0 w-20 h-20 bg-gradient-to-br from-green-400 to-green-600 rounded-2xl flex items-center justify-center text-2xl text-white shadow-xl animate-float" style="animation-delay: 2s;">
+                            <i class="fas fa-cogs"></i>
+                        </div>
+                        <div class="absolute bottom-0 right-0 w-20 h-20 bg-gradient-to-br from-cyan-400 to-cyan-600 rounded-2xl flex items-center justify-center text-2xl text-white shadow-xl animate-float" style="animation-delay: 3s;">
+                            <i class="fas fa-rocket"></i>
+                        </div>
+                        
+                        <!-- Additional corner elements -->
+                        <div class="absolute top-1/4 -left-4 w-16 h-16 bg-gradient-to-br from-purple-500 to-purple-600 rounded-full flex items-center justify-center text-xl text-white shadow-lg animate-float" style="animation-delay: 4s;">
+                            <i class="fas fa-star"></i>
+                        </div>
+                        <div class="absolute bottom-1/4 -right-4 w-16 h-16 bg-gradient-to-br from-orange-500 to-orange-600 rounded-full flex items-center justify-center text-xl text-white shadow-lg animate-float" style="animation-delay: 5s;">
+                            <i class="fas fa-trophy"></i>
+                        </div>
+                    </div>
+                    
+                    <!-- Central Element with enhanced glow -->
+                    <div class="absolute inset-0 flex items-center justify-center">
+                        <div class="w-40 h-40 rounded-3xl flex items-center justify-center text-5xl text-white shadow-2xl animate-glow-pulse relative overflow-hidden bg-gradient-to-br from-white/10 to-white/5 backdrop-blur-xl border border-white/10 glass-highlight">
+                            <i class="fas fa-laptop-code bg-gradient-to-r from-primary-400 via-accent-500 to-cyan-400 bg-clip-text text-transparent relative z-10"></i>
+                            <div class="absolute inset-0 bg-gradient-to-r from-primary-500/20 to-accent-500/20 animate-gradient-shift bg-300%"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Scroll indicator -->
+        <div class="absolute bottom-8 left-1/2 transform -translate-x-1/2 animate-bounce">
+            <a href="#features" class="text-gray-400 hover:text-white transition-colors">
+                <i class="fas fa-chevron-down text-2xl"></i>
+            </a>
+        </div>
+    </div>
+</section>
+
+<!-- Enhanced Features Section -->
+<section id="features" class="py-24 relative overflow-hidden">
+    <!-- Section background -->
+    <div class="absolute inset-0 bg-gradient-to-b from-dark-bg to-dark-surface"></div>
+    
+    <div class="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <!-- Section header -->
+        <div class="text-center mb-20 scroll-reveal">
+            <div class="inline-flex items-center px-4 py-2 bg-primary-500/10 border border-primary-500/20 rounded-full mb-6">
+                <i class="fas fa-star text-primary-400 mr-2"></i>
+                <span class="text-primary-400 font-medium">Features</span>
+            </div>
+            <h2 class="text-3xl sm:text-4xl font-bold font-display mb-6 bg-gradient-to-r from-primary-400 via-accent-500 to-cyan-400 bg-clip-text text-transparent">
+                Why Choose HackathonApp
+            </h2>
+            <p class="text-lg sm:text-xl text-gray-300 max-w-3xl mx-auto leading-relaxed">
+                Discover the powerful features that make our platform the perfect choice 
+                for your next innovative project
+            </p>
+        </div>
+        
+        <!-- Enhanced features grid -->
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8 mb-20">
+            <!-- Feature 1 -->
+            <div data-hover-lift class="scroll-reveal group rounded-2xl p-8 bg-gradient-to-br from-white/10 to-white/5 backdrop-blur-xl border border-white/10 shadow-lg transition-all duration-500 hover:-translate-y-2 hover:shadow-2xl hover:border-primary-500/30 glass-highlight" style="animation-delay: 0.1s;">
+                <div class="text-center">
+                    <div class="w-16 h-16 bg-gradient-to-br from-yellow-400 to-orange-500 rounded-2xl flex items-center justify-center text-3xl text-white shadow-xl mx-auto mb-6 group-hover:animate-bounce">
+                        <i class="fas fa-bolt"></i>
+                    </div>
+                    <h3 class="text-xl font-bold mb-4 text-white">Lightning Fast</h3>
+                    <p class="text-gray-400 leading-relaxed">
+                        Optimized performance ensuring your applications run at maximum speed with zero compromises.
+                    </p>
+                </div>
+            </div>
+            
+            <!-- Feature 2 -->
+            <div data-hover-lift class="scroll-reveal group rounded-2xl p-8 bg-gradient-to-br from-white/10 to-white/5 backdrop-blur-xl border border-white/10 shadow-lg transition-all duration-500 hover:-translate-y-2 hover:shadow-2xl hover:border-primary-500/30 glass-highlight" style="animation-delay: 0.2s;">
+                <div class="text-center">
+                    <div class="w-16 h-16 bg-gradient-to-br from-green-400 to-emerald-500 rounded-2xl flex items-center justify-center text-3xl text-white shadow-xl mx-auto mb-6 group-hover:animate-bounce">
+                        <i class="fas fa-shield-alt"></i>
+                    </div>
+                    <h3 class="text-xl font-bold mb-4 text-white">Ultra Secure</h3>
+                    <p class="text-gray-400 leading-relaxed">
+                        Enterprise-grade security protecting your data with advanced encryption and monitoring.
+                    </p>
+                </div>
+            </div>
+            
+            <!-- Feature 3 -->
+            <div data-hover-lift class="scroll-reveal group rounded-2xl p-8 bg-gradient-to-br from-white/10 to-white/5 backdrop-blur-xl border border-white/10 shadow-lg transition-all duration-500 hover:-translate-y-2 hover:shadow-2xl hover:border-primary-500/30 glass-highlight" style="animation-delay: 0.3s;">
+                <div class="text-center">
+                    <div class="w-16 h-16 bg-gradient-to-br from-blue-400 to-cyan-500 rounded-2xl flex items-center justify-center text-3xl text-white shadow-xl mx-auto mb-6 group-hover:animate-bounce">
+                        <i class="fas fa-expand-arrows-alt"></i>
+                    </div>
+                    <h3 class="text-xl font-bold mb-4 text-white">Highly Scalable</h3>
+                    <p class="text-gray-400 leading-relaxed">
+                        Built to grow with your needs, from startup to enterprise, without limits or barriers.
+                    </p>
+                </div>
+            </div>
+            
+            <!-- Feature 4 -->
+            <div data-hover-lift class="scroll-reveal group rounded-2xl p-8 bg-gradient-to-br from-white/10 to-white/5 backdrop-blur-xl border border-white/10 shadow-lg transition-all duration-500 hover:-translate-y-2 hover:shadow-2xl hover:border-primary-500/30 glass-highlight" style="animation-delay: 0.4s;">
+                <div class="text-center">
+                    <div class="w-16 h-16 bg-gradient-to-br from-purple-400 to-pink-500 rounded-2xl flex items-center justify-center text-3xl text-white shadow-xl mx-auto mb-6 group-hover:animate-bounce">
+                        <i class="fas fa-heart"></i>
+                    </div>
+                    <h3 class="text-xl font-bold mb-4 text-white">User Friendly</h3>
+                    <p class="text-gray-400 leading-relaxed">
+                        Intuitive interface designed with love, making complex tasks simple and enjoyable.
+                    </p>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Enhanced stats section -->
+        <div class="scroll-reveal grid grid-cols-2 lg:grid-cols-4 gap-8 text-center">
+            <div class="group">
+                <div class="text-4xl font-bold text-gradient mb-2 group-hover:scale-110 transition-transform duration-300">99.9%</div>
+                <div class="text-gray-400 font-medium">Uptime</div>
+            </div>
+            <div class="group">
+                <div class="text-4xl font-bold text-gradient mb-2 group-hover:scale-110 transition-transform duration-300">1M+</div>
+                <div class="text-gray-400 font-medium">Users</div>
+            </div>
+            <div class="group">
+                <div class="text-4xl font-bold text-gradient mb-2 group-hover:scale-110 transition-transform duration-300">50+</div>
+                <div class="text-gray-400 font-medium">Countries</div>
+            </div>
+            <div class="group">
+                <div class="text-4xl font-bold text-gradient mb-2 group-hover:scale-110 transition-transform duration-300">24/7</div>
+                <div class="text-gray-400 font-medium">Support</div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Enhanced CTA Section -->
+<section class="py-24 relative overflow-hidden">
+    <!-- Animated background -->
+    <div class="absolute inset-0">
+        <div class="absolute inset-0 bg-gradient-to-r from-primary-600/20 to-accent-600/20 animate-gradient-shift bg-300%"></div>
+        <div class="absolute top-0 left-0 w-full h-full">
+            <div class="absolute top-20 left-20 w-72 h-72 bg-primary-500/10 rounded-full filter blur-3xl animate-float"></div>
+            <div class="absolute bottom-20 right-20 w-72 h-72 bg-accent-500/10 rounded-full filter blur-3xl animate-float" style="animation-delay: 2s;"></div>
+        </div>
+    </div>
+    
+    <div class="relative z-10 max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
+        <div class="scroll-reveal rounded-3xl p-12 lg:p-16 bg-gradient-to-br from-white/10 to-white/5 backdrop-blur-xl border border-white/10 shadow-2xl glass-highlight">
+            <h2 class="text-4xl sm:text-5xl font-bold font-display mb-6 bg-gradient-to-r from-primary-400 via-accent-500 to-cyan-400 bg-clip-text text-transparent">
+                Ready to Get Started?
+            </h2>
+            <p class="text-xl text-gray-300 mb-10 max-w-2xl mx-auto leading-relaxed">
+                Join thousands of innovators who are already building amazing things with our platform. 
+                Start your journey today and transform your ideas into reality.
+            </p>
+            
+            <div class="flex flex-col sm:flex-row gap-6 justify-center">
+                {% if not session.user %}
+                          <a data-ripple href="{{ url_for('signup') }}" 
+                       class="group relative isolate inline-flex items-center justify-center gap-2 px-10 py-4 text-lg rounded-xl font-semibold text-white
+                              bg-gradient-to-r from-primary-500 to-primary-600 hover:from-primary-600 hover:to-primary-700
+                              shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 active:translate-y-0 active:scale-95
+                              transition-all duration-300 overflow-hidden">
+                        <span class="relative z-10 inline-flex items-center">
+                            <i class="fas fa-user-plus mr-3 group-hover:animate-bounce"></i>
+                            Create Free Account
+                        </span>
+                        <div class="absolute inset-0 z-0 bg-gradient-to-r from-accent-500 to-cyan-500 opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none"></div>
+                    </a>
+                          <a data-ripple href="{{ url_for('login') }}" 
+                       class="group relative inline-flex items-center justify-center gap-2 px-10 py-4 text-lg rounded-xl font-semibold text-white
+                              bg-gradient-to-br from-white/10 to-white/5 hover:bg-white/10 backdrop-blur-xl border border-primary-500/30 hover:border-primary-500/60 glass-highlight
+                              shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 active:translate-y-0 active:scale-95
+                              transition-all duration-300">
+                        <i class="fas fa-sign-in-alt mr-3 group-hover:scale-110 transition-transform"></i>
+                        Sign In
+                    </a>
+                {% else %}
+                          <a data-ripple href="{{ url_for('dashboard') }}" 
+                       class="group inline-flex items-center justify-center gap-2 px-10 py-4 text-lg rounded-xl font-semibold text-white
+                              bg-gradient-to-r from-primary-500 to-primary-600 hover:from-primary-600 hover:to-primary-700
+                              shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 active:translate-y-0 active:scale-95
+                              transition-all duration-300">
+                        <i class="fas fa-tachometer-alt mr-3 group-hover:animate-bounce"></i>
+                        Go to Dashboard
+                    </a>
+                {% endif %}
+            </div>
+            
+            <!-- Trust indicators -->
+            <div class="mt-12 pt-8 border-t border-white/10">
+                <p class="text-sm text-gray-400 mb-4">Trusted by industry leaders</p>
+                <div class="flex justify-center items-center space-x-8 opacity-60">
+                    <i class="fab fa-microsoft text-2xl hover:text-primary-400 transition-colors"></i>
+                    <i class="fab fa-google text-2xl hover:text-primary-400 transition-colors"></i>
+                    <i class="fab fa-amazon text-2xl hover:text-primary-400 transition-colors"></i>
+                    <i class="fab fa-apple text-2xl hover:text-primary-400 transition-colors"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Enhanced JavaScript for this page -->
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Enhanced scroll reveal
+        const scrollElements = document.querySelectorAll('.scroll-reveal');
+        
+        const elementInView = (el, dividend = 1) => {
+            const elementTop = el.getBoundingClientRect().top;
+            return (
+                elementTop <= 
+                (window.innerHeight || document.documentElement.clientHeight) / dividend
+            );
+        };
+        
+        const displayScrollElement = (element) => {
+            element.classList.add('revealed');
+        };
+        
+        const handleScrollAnimation = () => {
+            scrollElements.forEach((el) => {
+                if (elementInView(el, 1.25)) {
+                    displayScrollElement(el);
+                }
+            });
+        };
+        
+        window.addEventListener('scroll', () => {
+            handleScrollAnimation();
+        });
+        
+        // Trigger initial check
+        handleScrollAnimation();
+        
+        // Smooth scrolling for anchor links
+        document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+            anchor.addEventListener('click', function (e) {
+                e.preventDefault();
+                const target = document.querySelector(this.getAttribute('href'));
+                if (target) {
+                    target.scrollIntoView({
+                        behavior: 'smooth',
+                        block: 'start'
+                    });
+                }
+            });
+        });
+    });
+</script>
+
+{% endblock %}

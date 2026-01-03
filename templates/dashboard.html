@@ -1,0 +1,319 @@
+{% extends "base.html" %}
+
+{% block title %}Dashboard - HackathonApp{% endblock %}
+
+{% block content %}
+<div class="min-h-screen">
+    <!-- Dashboard Header -->
+    <div class="bg-gradient-to-br from-white/10 to-white/5 backdrop-blur-xl border-b border-white/10 shadow-lg glass-highlight">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+            <div class="flex items-center justify-between">
+                <div class="animate-fade-in">
+                    <h1 class="text-3xl font-bold text-white mb-2">
+                        Welcome back, {{ user_data.fullname }}! 👋
+                    </h1>
+                    <p class="text-gray-300">Ready to build something amazing today?</p>
+                </div>
+                <div class="hidden md:flex items-center space-x-4 animate-slide-up">
+                    <div class="bg-white/10 rounded-lg px-4 py-2 backdrop-blur-sm">
+                        <i class="fas fa-calendar-alt text-white mr-2"></i>
+                        <span class="text-white" id="current-date"></span>
+                    </div>
+                    <div class="bg-white/10 rounded-lg px-4 py-2 backdrop-blur-sm">
+                        <i class="fas fa-clock text-white mr-2"></i>
+                        <span class="text-white" id="current-time"></span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Dashboard Content -->
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <!-- Quick Stats -->
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+            <div data-hover-lift class="group rounded-2xl p-6 bg-gradient-to-br from-white/10 to-white/5 backdrop-blur-xl border border-white/10 shadow-lg transition-all duration-300 hover:-translate-y-1 hover:shadow-2xl hover:border-primary-500/30 glass-highlight">
+                <div class="flex items-center">
+                    <div class="p-3 rounded-full bg-gradient-to-br from-blue-500 to-blue-600 group-hover:scale-110 transition-transform duration-300">
+                        <i class="fas fa-project-diagram text-white text-xl"></i>
+                    </div>
+                    <div class="ml-4">
+                        <p class="text-gray-400 text-sm">Active Projects</p>
+                        <p class="text-2xl font-bold text-white">12</p>
+                    </div>
+                </div>
+                <div class="mt-4 flex items-center text-green-400 text-sm">
+                    <i class="fas fa-arrow-up mr-1"></i>
+                    <span>+2 this week</span>
+                </div>
+            </div>
+
+            <div data-hover-lift class="group rounded-2xl p-6 bg-gradient-to-br from-white/10 to-white/5 backdrop-blur-xl border border-white/10 shadow-lg transition-all duration-300 hover:-translate-y-1 hover:shadow-2xl hover:border-primary-500/30 glass-highlight">
+                <div class="flex items-center">
+                    <div class="p-3 rounded-full bg-gradient-to-br from-green-500 to-green-600 group-hover:scale-110 transition-transform duration-300">
+                        <i class="fas fa-user text-white text-xl"></i>
+                    </div>
+                    <div class="ml-4">
+                        <p class="text-gray-400 text-sm">Member Since</p>
+                        <p class="text-2xl font-bold text-white">{{ user_data.joined }}</p>
+                    </div>
+                </div>
+                <div class="mt-4 flex items-center text-green-400 text-sm">
+                    <i class="fas fa-calendar mr-1"></i>
+                    <span>Account created</span>
+                </div>
+            </div>
+
+            <div data-hover-lift class="group rounded-2xl p-6 bg-gradient-to-br from-white/10 to-white/5 backdrop-blur-xl border border-white/10 shadow-lg transition-all duration-300 hover:-translate-y-1 hover:shadow-2xl hover:border-primary-500/30 glass-highlight">
+                <div class="flex items-center">
+                    <div class="p-3 rounded-full bg-gradient-to-br from-purple-500 to-purple-600 group-hover:scale-110 transition-transform duration-300">
+                        <i class="fas fa-users text-white text-xl"></i>
+                    </div>
+                    <div class="ml-4">
+                        <p class="text-gray-400 text-sm">Total Users</p>
+                        <p class="text-2xl font-bold text-white">{{ user_data.total_users }}</p>
+                    </div>
+                </div>
+                <div class="mt-4 flex items-center text-blue-400 text-sm">
+                    <i class="fas fa-globe mr-1"></i>
+                    <span>Platform members</span>
+                </div>
+            </div>
+
+            <div data-hover-lift class="group rounded-2xl p-6 bg-gradient-to-br from-white/10 to-white/5 backdrop-blur-xl border border-white/10 shadow-lg transition-all duration-300 hover:-translate-y-1 hover:shadow-2xl hover:border-primary-500/30 glass-highlight">
+                <div class="flex items-center">
+                    <div class="p-3 rounded-full bg-gradient-to-br from-orange-500 to-orange-600 group-hover:scale-110 transition-transform duration-300">
+                        <i class="fas fa-envelope text-white text-xl"></i>
+                    </div>
+                    <div class="ml-4">
+                        <p class="text-gray-400 text-sm">Newsletter</p>
+                        <p class="text-2xl font-bold text-white">
+                            {% if user_data.newsletter %}Subscribed{% else %}Not subscribed{% endif %}
+                        </p>
+                    </div>
+                </div>
+                <div class="mt-4 flex items-center {% if user_data.newsletter %}text-green-400{% else %}text-gray-400{% endif %} text-sm">
+                    <i class="fas {% if user_data.newsletter %}fa-check{% else %}fa-times{% endif %} mr-1"></i>
+                    <span>{% if user_data.newsletter %}Active{% else %}Inactive{% endif %}</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Main Content Grid -->
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+            <!-- Recent Activity -->
+            <div class="lg:col-span-2">
+                <div data-hover-lift class="rounded-2xl p-6 bg-gradient-to-br from-white/10 to-white/5 backdrop-blur-xl border border-white/10 shadow-lg glass-highlight">
+                    <div class="flex items-center justify-between mb-6">
+                        <h3 class="text-xl font-semibold text-white">Recent Activity</h3>
+                        <button class="text-primary-400 hover:text-primary-300 transition-colors">
+                            View All
+                        </button>
+                    </div>
+                    <div class="space-y-4">
+                        <div class="p-4 rounded-xl hover:bg-white/5 transition-colors duration-200">
+                            <div class="flex items-start space-x-3">
+                                <div class="p-2 bg-green-500/20 rounded-full">
+                                    <i class="fas fa-check text-green-400"></i>
+                                </div>
+                                <div class="flex-1">
+                                    <p class="text-white font-medium">Completed "User Authentication" task</p>
+                                    <p class="text-gray-400 text-sm">2 hours ago</p>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="p-4 rounded-xl hover:bg-white/5 transition-colors duration-200">
+                            <div class="flex items-start space-x-3">
+                                <div class="p-2 bg-blue-500/20 rounded-full">
+                                    <i class="fas fa-plus text-blue-400"></i>
+                                </div>
+                                <div class="flex-1">
+                                    <p class="text-white font-medium">Created new project "Mobile App"</p>
+                                    <p class="text-gray-400 text-sm">4 hours ago</p>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="p-4 rounded-xl hover:bg-white/5 transition-colors duration-200">
+                            <div class="flex items-start space-x-3">
+                                <div class="p-2 bg-purple-500/20 rounded-full">
+                                    <i class="fas fa-users text-purple-400"></i>
+                                </div>
+                                <div class="flex-1">
+                                    <p class="text-white font-medium">Added 2 team members to "Web Dashboard"</p>
+                                    <p class="text-gray-400 text-sm">Yesterday</p>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="p-4 rounded-xl hover:bg-white/5 transition-colors duration-200">
+                            <div class="flex items-start space-x-3">
+                                <div class="p-2 bg-orange-500/20 rounded-full">
+                                    <i class="fas fa-rocket text-orange-400"></i>
+                                </div>
+                                <div class="flex-1">
+                                    <p class="text-white font-medium">Deployed "API Gateway" to production</p>
+                                    <p class="text-gray-400 text-sm">2 days ago</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Sidebar -->
+            <div class="space-y-6">
+                <!-- Quick Actions -->
+                <div data-hover-lift class="rounded-2xl p-6 bg-gradient-to-br from-white/10 to-white/5 backdrop-blur-xl border border-white/10 shadow-lg glass-highlight">
+                    <h3 class="text-lg font-semibold text-white mb-4">Quick Actions</h3>
+                    <div class="space-y-3">
+                        <button data-quick-action data-ripple class="group w-full flex items-center px-4 py-3 rounded-xl bg-gradient-to-br from-white/10 to-white/5 hover:bg-white/10 border border-white/10 text-white transition-all duration-200 hover:scale-[1.02] glass-highlight">
+                            <i class="fas fa-plus mr-2 group-hover:scale-110 transition-transform"></i>
+                            New Project
+                        </button>
+                        <button data-quick-action data-ripple class="group w-full flex items-center px-4 py-3 rounded-xl bg-gradient-to-br from-white/10 to-white/5 hover:bg-white/10 border border-white/10 text-white transition-all duration-200 hover:scale-[1.02] glass-highlight">
+                            <i class="fas fa-upload mr-2 group-hover:scale-110 transition-transform"></i>
+                            Upload Files
+                        </button>
+                        <button data-quick-action data-ripple class="group w-full flex items-center px-4 py-3 rounded-xl bg-gradient-to-br from-white/10 to-white/5 hover:bg-white/10 border border-white/10 text-white transition-all duration-200 hover:scale-[1.02] glass-highlight">
+                            <i class="fas fa-user-plus mr-2 group-hover:scale-110 transition-transform"></i>
+                            Invite Team
+                        </button>
+                        <button data-quick-action data-ripple class="group w-full flex items-center px-4 py-3 rounded-xl bg-gradient-to-br from-white/10 to-white/5 hover:bg-white/10 border border-white/10 text-white transition-all duration-200 hover:scale-[1.02] glass-highlight">
+                            <i class="fas fa-cog mr-2 group-hover:scale-110 transition-transform"></i>
+                            Settings
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Progress Overview -->
+                <div data-hover-lift class="rounded-2xl p-6 bg-gradient-to-br from-white/10 to-white/5 backdrop-blur-xl border border-white/10 shadow-lg glass-highlight">
+                    <h3 class="text-lg font-semibold text-white mb-4">Current Sprint</h3>
+                    <div class="space-y-4">
+                        <div>
+                            <div class="flex justify-between text-sm mb-2">
+                                <span class="text-gray-400">Frontend Development</span>
+                                <span class="text-white">75%</span>
+                            </div>
+                            <div class="w-full bg-white/10 rounded-full h-2">
+                                <div class="bg-gradient-to-r from-primary-500 to-primary-600 h-2 rounded-full progress-bar" 
+                                     style="width: 75%"></div>
+                            </div>
+                        </div>
+                        
+                        <div>
+                            <div class="flex justify-between text-sm mb-2">
+                                <span class="text-gray-400">Backend API</span>
+                                <span class="text-white">90%</span>
+                            </div>
+                            <div class="w-full bg-white/10 rounded-full h-2">
+                                <div class="bg-gradient-to-r from-green-500 to-green-600 h-2 rounded-full progress-bar" 
+                                     style="width: 90%"></div>
+                            </div>
+                        </div>
+                        
+                        <div>
+                            <div class="flex justify-between text-sm mb-2">
+                                <span class="text-gray-400">Testing</span>
+                                <span class="text-white">45%</span>
+                            </div>
+                            <div class="w-full bg-white/10 rounded-full h-2">
+                                <div class="bg-gradient-to-r from-yellow-500 to-yellow-600 h-2 rounded-full progress-bar" 
+                                     style="width: 45%"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Team Status -->
+                <div data-hover-lift class="rounded-2xl p-6 bg-gradient-to-br from-white/10 to-white/5 backdrop-blur-xl border border-white/10 shadow-lg glass-highlight">
+                    <h3 class="text-lg font-semibold text-white mb-4">Team Online</h3>
+                    <div class="space-y-3">
+                        <div class="flex items-center space-x-3">
+                            <div class="w-8 h-8 bg-gradient-to-br from-primary-500 to-primary-600 rounded-full flex items-center justify-center">
+                                <span class="text-white text-sm font-bold">AJ</span>
+                            </div>
+                            <div class="flex-1">
+                                <p class="text-white font-medium">Alex Johnson</p>
+                                <p class="text-green-400 text-xs flex items-center">
+                                    <span class="w-2 h-2 bg-green-400 rounded-full mr-1"></span>
+                                    Online
+                                </p>
+                            </div>
+                        </div>
+                        
+                        <div class="flex items-center space-x-3">
+                            <div class="w-8 h-8 bg-gradient-to-br from-pink-500 to-pink-600 rounded-full flex items-center justify-center">
+                                <span class="text-white text-sm font-bold">SC</span>
+                            </div>
+                            <div class="flex-1">
+                                <p class="text-white font-medium">Sarah Chen</p>
+                                <p class="text-green-400 text-xs flex items-center">
+                                    <span class="w-2 h-2 bg-green-400 rounded-full mr-1"></span>
+                                    Online
+                                </p>
+                            </div>
+                        </div>
+                        
+                        <div class="flex items-center space-x-3">
+                            <div class="w-8 h-8 bg-gradient-to-br from-indigo-500 to-indigo-600 rounded-full flex items-center justify-center">
+                                <span class="text-white text-sm font-bold">MR</span>
+                            </div>
+                            <div class="flex-1">
+                                <p class="text-white font-medium">Mike Rodriguez</p>
+                                <p class="text-gray-400 text-xs flex items-center">
+                                    <span class="w-2 h-2 bg-gray-400 rounded-full mr-1"></span>
+                                    Away
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+// Update time and date
+function updateDateTime() {
+    const now = new Date();
+    const dateElement = document.getElementById('current-date');
+    const timeElement = document.getElementById('current-time');
+    
+    if (dateElement) {
+        dateElement.textContent = now.toLocaleDateString();
+    }
+    
+    if (timeElement) {
+        timeElement.textContent = now.toLocaleTimeString();
+    }
+}
+
+// Update every second
+updateDateTime();
+setInterval(updateDateTime, 1000);
+
+// Animate progress bars on page load
+window.addEventListener('load', function() {
+    const progressBars = document.querySelectorAll('.progress-bar');
+    progressBars.forEach((bar, index) => {
+        setTimeout(() => {
+            bar.style.transform = 'scaleX(1)';
+            bar.style.transformOrigin = 'left';
+        }, index * 200);
+    });
+});
+
+// Add click animations to quick action buttons
+document.querySelectorAll('[data-quick-action]').forEach(button => {
+    button.addEventListener('click', function() {
+        this.classList.add('animate-bounce');
+        setTimeout(() => {
+            this.classList.remove('animate-bounce');
+        }, 600);
+    });
+});
+</script>
+{% endblock %}

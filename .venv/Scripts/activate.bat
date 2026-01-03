@@ -8,7 +8,7 @@ if defined _OLD_CODEPAGE (
     "%SystemRoot%\System32\chcp.com" 65001 > nul
 )
 
-set VIRTUAL_ENV=C:\Users\Jay\Desktop\Dayflow\.venv
+set VIRTUAL_ENV=c:\Users\Jay\Desktop\odoo_gcet\.venv
 
 if not defined PROMPT set PROMPT=$P$G
 
