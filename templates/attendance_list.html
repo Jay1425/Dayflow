@@ -82,14 +82,14 @@
                     
                     {% else %}
                     <!-- Employee/Employee Monthly: Month Navigation -->
-                    <a href="{{ url_for('attendance_list', month=prev_month{% if view_type == 'employee_monthly' %}, employee_id=view_employee.id{% endif %}) }}" 
+                    <a href="{% if view_type == 'employee_monthly' %}{{ url_for('attendance_list', month=prev_month, employee_id=view_employee.id) }}{% else %}{{ url_for('attendance_list', month=prev_month) }}{% endif %}" 
                        class="p-2 rounded-lg bg-white/10 hover:bg-white/20 transition-colors">
                         <i class="fas fa-chevron-left text-white"></i>
                     </a>
                     <div class="px-4 py-2 rounded-lg bg-white/10 text-white font-medium min-w-[180px] text-center">
                         {{ current_month }}
                     </div>
-                    <a href="{{ url_for('attendance_list', month=next_month{% if view_type == 'employee_monthly' %}, employee_id=view_employee.id{% endif %}) }}" 
+                    <a href="{% if view_type == 'employee_monthly' %}{{ url_for('attendance_list', month=next_month, employee_id=view_employee.id) }}{% else %}{{ url_for('attendance_list', month=next_month) }}{% endif %}" 
                        class="p-2 rounded-lg bg-white/10 hover:bg-white/20 transition-colors">
                         <i class="fas fa-chevron-right text-white"></i>
                     </a>
@@ -148,7 +148,9 @@
                 {% else %}
                 <!-- Admin/HR: Search Bar -->
                 <form method="GET" action="{{ url_for('attendance') }}" class="flex items-center space-x-2">
+                    {% if target_date %}
                     <input type="hidden" name="date" value="{{ target_date.strftime('%Y-%m-%d') }}">
+                    {% endif %}
                     <div class="relative">
                         <input type="text" 
                                name="search" 
@@ -161,7 +163,7 @@
                             class="px-4 py-2 rounded-lg bg-primary-500 hover:bg-primary-600 text-white font-medium transition-colors">
                         Search
                     </button>
-                    {% if search_query %}
+                    {% if search_query and target_date %}
                     <a href="{{ url_for('attendance', date=target_date.strftime('%Y-%m-%d')) }}" 
                        class="px-4 py-2 rounded-lg bg-white/10 hover:bg-white/20 text-white transition-colors">
                         Clear

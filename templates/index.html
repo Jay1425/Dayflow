@@ -38,24 +38,24 @@
                 </div>
                 
                 <div class="animate-fade-in-up flex flex-col sm:flex-row gap-6 justify-center lg:justify-start" style="animation-delay: 0.6s;">
-                          <a data-ripple href="{{ url_for('about') }}" 
+                          <a data-ripple href="{{ url_for('employee_register') }}" 
                               class="group relative inline-flex items-center justify-center gap-2 px-8 py-4 rounded-xl font-semibold text-white
                               bg-gradient-to-r from-primary-500 to-primary-600 hover:from-primary-600 hover:to-primary-700
                               shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 active:translate-y-0 active:scale-95
                               transition-all duration-300 overflow-hidden">
                         <span class="relative z-10 flex items-center">
-                            <i class="fas fa-rocket mr-3 group-hover:animate-bounce text-lg"></i>
-                            Get Started
+                            <i class="fas fa-user-plus mr-3 group-hover:animate-bounce text-lg"></i>
+                            Register as Employee
                         </span>
                         <div class="absolute inset-0 bg-gradient-to-r from-accent-500 to-cyan-500 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
                     </a>
-                          <a data-ripple href="#features" 
+                          <a data-ripple href="{{ url_for('login') }}" 
                               class="group relative inline-flex items-center justify-center gap-2 px-8 py-4 rounded-xl font-semibold text-white
                               bg-gradient-to-br from-white/10 to-white/5 hover:bg-white/10 backdrop-blur-xl border border-primary-500/30 hover:border-primary-500/60 glass-highlight
                               shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 active:translate-y-0 active:scale-95
                               transition-all duration-300 overflow-hidden">
-                        <i class="fas fa-play mr-3 group-hover:scale-110 transition-transform duration-300"></i>
-                        Learn More
+                        <i class="fas fa-sign-in-alt mr-3 group-hover:scale-110 transition-transform duration-300"></i>
+                        Login
                         <div class="absolute inset-0 bg-gradient-to-r from-primary-500/20 to-accent-500/20 opacity-0 group-hover:opacity-100 transition-opacity duration-300 rounded-xl"></div>
                     </a>
                 </div>

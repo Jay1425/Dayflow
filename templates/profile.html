@@ -2,79 +2,599 @@
 
 {% block title %}Profile - Dayflow{% endblock %}
 
+{% block head %}
+    <link rel="stylesheet" href="https://unpkg.com/cropperjs@1.6.2/dist/cropper.min.css">
+{% endblock %}
+
 {% block content %}
-<section class="min-h-screen py-12 px-4 sm:px-6 lg:px-8">
-    <div class="max-w-4xl mx-auto">
-        <!-- Header -->
-        <div class="text-center mb-8">
-            <h1 class="text-4xl font-bold text-white mb-2">User Profile</h1>
-            <p class="text-gray-400">Manage your account information</p>
+<section class="min-h-screen py-8 px-4 sm:px-6 lg:px-8">
+    <div class="max-w-6xl mx-auto">
+        <!-- Breadcrumb -->
+        <div class="mb-6 flex items-center justify-between">
+            <nav class="text-sm text-gray-400">
+                <a href="{{ dashboard_url }}" class="hover:text-white transition-colors">Dashboard</a>
+                <span class="mx-2">→</span>
+                <span class="text-gray-200">Profile</span>
+            </nav>
+            <div class="text-xs text-gray-500">
+                {% if is_self_view %}
+                    Viewing: <span class="text-gray-300">My Profile</span>
+                {% else %}
+                    Viewing: <span class="text-gray-300">{{ user.fullname }}</span>
+                {% endif %}
+            </div>
         </div>
 
-        <!-- Profile Card -->
-        <div class="bg-gradient-to-br from-white/10 to-white/5 backdrop-blur-xl rounded-2xl shadow-2xl p-8 border border-white/10 mb-8 glass-highlight">
-            <div class="flex items-center mb-6">
-                <div class="w-20 h-20 bg-gradient-to-br from-blue-500 to-purple-500 rounded-full flex items-center justify-center mr-6">
-                    <i class="fas fa-user text-3xl text-white"></i>
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            <!-- Left column: identity + quick actions -->
+            <div class="lg:col-span-1">
+                <div class="rounded-2xl p-6 bg-gradient-to-br from-white/10 to-white/5 backdrop-blur-xl border border-white/10 shadow-lg glass-highlight">
+                    <div class="flex items-center gap-4">
+                        <div class="relative">
+                            {% if user.profile_photo %}
+                            <img src="{{ url_for('static', filename=user.profile_photo) }}" 
+                                 alt="{{ user.fullname }}"
+                                 class="w-20 h-20 rounded-full object-cover border-2 border-primary-500/30">
+                            {% else %}
+                            <div class="w-20 h-20 rounded-full bg-gradient-to-br from-primary-500 to-accent-500 flex items-center justify-center text-white font-bold text-2xl">
+                                {{ user.fullname[0].upper() }}
+                            </div>
+                            {% endif %}
+                            {% if not user.is_active %}
+                            <div class="absolute -top-1 -right-1 w-6 h-6 bg-red-500 rounded-full border-2 border-gray-900 flex items-center justify-center">
+                                <i class="fas fa-ban text-white text-xs"></i>
+                            </div>
+                            {% endif %}
+                        </div>
+                        <div class="min-w-0">
+                            <h2 class="text-xl font-bold text-white truncate">{{ user.fullname }}</h2>
+                            <p class="text-sm text-gray-400">{{ user.role }}</p>
+                            <p class="text-xs text-gray-500 font-mono">{{ user.login_id or user.username }}</p>
+                        </div>
+                    </div>
+
+                    <!-- Tabs -->
+                    <div class="mt-5">
+                        <div class="flex items-center space-x-2 bg-white/5 rounded-lg p-1">
+                            <button data-tab="personal" class="profile-tab active flex-1 px-3 py-2 rounded-md text-sm text-white bg-primary-500/30 font-medium transition-all">
+                                <i class="fas fa-user mr-1"></i>Personal
+                            </button>
+                            <button data-tab="resume" class="profile-tab flex-1 px-3 py-2 rounded-md text-sm text-gray-300 hover:text-white hover:bg-white/10 transition-all">
+                                <i class="fas fa-file-alt mr-1"></i>Resume
+                            </button>
+                            {% if can_view_salary and user.role == 'Employee' %}
+                            <button data-tab="salary" class="profile-tab flex-1 px-3 py-2 rounded-md text-sm text-gray-300 hover:text-white hover:bg-white/10 transition-all">
+                                <i class="fas fa-dollar-sign mr-1"></i>Salary
+                            </button>
+                            {% endif %}
+                        </div>
+                    </div>
+
+                    <!-- Quick facts -->
+                    <div class="mt-6 grid grid-cols-1 gap-4">
+                        <div class="p-4 rounded-xl bg-white/5 border border-white/10">
+                            <p class="text-xs text-gray-400 mb-1">Email</p>
+                            <p class="text-sm text-white truncate">{{ user.email }}</p>
+                        </div>
+                        <div class="p-4 rounded-xl bg-white/5 border border-white/10">
+                            <p class="text-xs text-gray-400 mb-1">Joined</p>
+                            <p class="text-sm text-white">{{ user.created_at.strftime('%B %Y') }}</p>
+                        </div>
+                    </div>
+
+                    <!-- Photo update (with crop) -->
+                    {% if editable %}
+                    <div class="mt-6">
+                        <h3 class="text-sm font-semibold text-white mb-3">Profile Photo</h3>
+                        <p id="photo-message" class="text-sm text-gray-300 mb-3"></p>
+                        <input id="profile-photo-input" type="file" accept="image/png,image/jpeg,image/webp"
+                               class="block w-full text-sm text-gray-300 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-primary-500 file:text-white hover:file:bg-primary-600 file:cursor-pointer cursor-pointer">
+
+                        <div id="photo-crop-wrap" class="hidden mt-4">
+                            <div class="aspect-square bg-black/50 rounded-lg overflow-hidden mb-3">
+                                <img id="photo-crop-preview" src="" alt="Crop preview" class="max-w-full">
+                            </div>
+                            <div class="flex gap-2">
+                                <button id="btn-upload-photo" 
+                                        data-upload-url="{{ url_for('upload_profile_photo', user_id=user.id) }}"
+                                        class="flex-1 px-4 py-2 bg-primary-500 text-white rounded-lg hover:bg-primary-600 transition">
+                                    <i class="fas fa-check mr-2"></i>Upload
+                                </button>
+                                <button id="btn-cancel-photo" class="flex-1 px-4 py-2 bg-white/10 text-white rounded-lg hover:bg-white/20 transition">
+                                    Cancel
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                    {% endif %}
                 </div>
-                <div>
-                    <h2 class="text-2xl font-bold text-white">{{ user.fullname }}</h2>
-                    <p class="text-gray-400">@{{ user.username }}</p>
-                    <p class="text-sm text-gray-500">Member since {{ user.created_at.strftime('%B %Y') }}</p>
+
+                <!-- Management Controls (HR/Admin only) -->
+                {% if is_hr_admin_viewer and not is_self_view %}
+                <div class="mt-6 rounded-2xl p-6 bg-gradient-to-br from-white/10 to-white/5 backdrop-blur-xl border border-white/10 shadow-lg glass-highlight">
+                    <h3 class="text-lg font-semibold text-white mb-4">Management Controls</h3>
+                    <div class="space-y-3">
+                        {% if viewer.role == 'Admin' %}
+                        <form method="post" action="{{ url_for('management_action', user_id=user.id) }}" class="p-4 rounded-xl bg-white/5 border border-white/10">
+                            <label class="text-sm text-gray-300 mb-2 block">Assign Role</label>
+                            <input type="hidden" name="action" value="assign_role">
+                            <select name="new_role" class="w-full px-3 py-2 rounded-lg bg-white/10 text-white border border-white/20 mb-3">
+                                <option value="Employee" {% if user.role == 'Employee' %}selected{% endif %}>Employee</option>
+                                <option value="HR Officer" {% if user.role == 'HR Officer' %}selected{% endif %}>HR Officer</option>
+                            </select>
+                            <button type="submit" class="w-full px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition">
+                                <i class="fas fa-user-tag mr-2"></i>Update Role
+                            </button>
+                        </form>
+                        {% endif %}
+
+                        <form method="post" action="{{ url_for('management_action', user_id=user.id) }}" class="p-4 rounded-xl bg-white/5 border border-white/10">
+                            <input type="hidden" name="action" value="toggle_active">
+                            <button type="submit" class="w-full px-4 py-2 {% if user.is_active %}bg-red-500 hover:bg-red-600{% else %}bg-green-500 hover:bg-green-600{% endif %} text-white rounded-lg transition">
+                                {% if user.is_active %}
+                                    <i class="fas fa-ban mr-2"></i>Deactivate Account
+                                {% else %}
+                                    <i class="fas fa-check mr-2"></i>Activate Account
+                                {% endif %}
+                            </button>
+                        </form>
+
+                        <form method="post" action="{{ url_for('management_action', user_id=user.id) }}" class="p-4 rounded-xl bg-white/5 border border-white/10">
+                            <input type="hidden" name="action" value="reset_password">
+                            <button type="submit" class="w-full px-4 py-2 bg-yellow-500 text-white rounded-lg hover:bg-yellow-600 transition">
+                                <i class="fas fa-key mr-2"></i>Reset Password
+                            </button>
+                        </form>
+                    </div>
                 </div>
+                {% endif %}
             </div>
 
-            <!-- Profile Information -->
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div>
-                    <label class="block text-sm font-medium text-gray-300 mb-2">Full Name</label>
-                    <div class="px-4 py-3 bg-gradient-to-br from-white/10 to-white/5 border border-white/10 rounded-xl text-white glass-highlight">
-                        {{ user.fullname }}
+            <!-- Right column: tab panels -->
+            <div class="lg:col-span-2 space-y-6">
+                <!-- Personal tab -->
+                <div data-profile-panel="personal" class="rounded-2xl p-6 bg-gradient-to-br from-white/10 to-white/5 backdrop-blur-xl border border-white/10 shadow-lg glass-highlight">
+                    <div class="flex items-center justify-between mb-4">
+                        <div>
+                            <h2 class="text-xl font-semibold text-white">Personal Information</h2>
+                            <p class="text-sm text-gray-400">Profile and work details</p>
+                        </div>
+                        <div class="flex items-center gap-3">
+                            {% if not editable %}
+                            <span class="px-3 py-1 bg-blue-500/20 text-blue-300 text-xs font-semibold rounded-full">
+                                <i class="fas fa-eye mr-1"></i>View Only
+                            </span>
+                            {% endif %}
+                        </div>
                     </div>
+
+                    <form method="post" action="{{ url_for('update_profile', user_id=user.id) }}">
+                        <!-- Personal details -->
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
+                            <div>
+                                <label class="block text-sm font-medium text-gray-300 mb-2">Full Name</label>
+                                <input type="text" name="fullname" value="{{ user.fullname }}" {% if not editable %}disabled{% endif %}
+                                       class="w-full px-4 py-3 rounded-lg bg-white/10 text-white border border-white/20 focus:border-primary-500 focus:outline-none disabled:opacity-50">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-300 mb-2">Email</label>
+                                <input type="email" name="email" value="{{ user.email }}" {% if not editable %}disabled{% endif %}
+                                       class="w-full px-4 py-3 rounded-lg bg-white/10 text-white border border-white/20 focus:border-primary-500 focus:outline-none disabled:opacity-50">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-300 mb-2">Department</label>
+                                <input type="text" name="department" value="{{ user.department or '' }}" {% if not editable %}disabled{% endif %}
+                                       class="w-full px-4 py-3 rounded-lg bg-white/10 text-white border border-white/20 focus:border-primary-500 focus:outline-none disabled:opacity-50">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-300 mb-2">Designation</label>
+                                <input type="text" name="designation" value="{{ user.designation or '' }}" {% if not editable %}disabled{% endif %}
+                                       class="w-full px-4 py-3 rounded-lg bg-white/10 text-white border border-white/20 focus:border-primary-500 focus:outline-none disabled:opacity-50">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-300 mb-2">Date of Joining</label>
+                                <input type="date" name="date_of_joining" value="{{ user.date_of_joining.strftime('%Y-%m-%d') if user.date_of_joining else '' }}" {% if not editable %}disabled{% endif %}
+                                       class="w-full px-4 py-3 rounded-lg bg-white/10 text-white border border-white/20 focus:border-primary-500 focus:outline-none disabled:opacity-50">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-300 mb-2">Reporting Manager</label>
+                                <input type="text" name="reporting_manager" value="{{ user.reporting_manager or '' }}" {% if not editable %}disabled{% endif %}
+                                       class="w-full px-4 py-3 rounded-lg bg-white/10 text-white border border-white/20 focus:border-primary-500 focus:outline-none disabled:opacity-50">
+                            </div>
+                        </div>
+
+                        <!-- Work details (employee-specific fields) -->
+                        <div class="mt-8 pt-8 border-t border-white/10">
+                            <h3 class="text-lg font-semibold text-white mb-4">Work Details</h3>
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-300 mb-2">Year of Joining</label>
+                                    <div class="px-4 py-3 rounded-lg bg-white/5 border border-white/10 text-white">
+                                        {{ user.year_of_joining }}
+                                    </div>
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-300 mb-2">Login ID</label>
+                                    <div class="px-4 py-3 rounded-lg bg-white/5 border border-white/10 text-white font-mono">
+                                        {{ user.login_id or user.username }}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Security section -->
+                        <div class="mt-8 pt-8 border-t border-white/10">
+                            <h3 class="text-lg font-semibold text-white mb-4">Security</h3>
+                            <div class="space-y-3">
+                                <a href="{{ url_for('change_password') }}" 
+                                   class="inline-flex items-center px-4 py-2 bg-gradient-to-r from-purple-500 to-pink-500 text-white rounded-lg hover:brightness-110 transition">
+                                    <i class="fas fa-key mr-2"></i>Change Password
+                                </a>
+                            </div>
+                        </div>
+
+                        {% if editable %}
+                        <div class="mt-8 flex justify-end">
+                            <button type="submit" class="px-6 py-3 bg-gradient-to-r from-primary-500 to-accent-500 text-white font-semibold rounded-xl hover:brightness-110 transition">
+                                <i class="fas fa-save mr-2"></i>Save Changes
+                            </button>
+                        </div>
+                        {% endif %}
+                    </form>
                 </div>
-                <div>
-                    <label class="block text-sm font-medium text-gray-300 mb-2">Username</label>
-                    <div class="px-4 py-3 bg-gradient-to-br from-white/10 to-white/5 border border-white/10 rounded-xl text-white glass-highlight">
-                        {{ user.username }}
-                    </div>
-                </div>
-                <div>
-                    <label class="block text-sm font-medium text-gray-300 mb-2">Email Address</label>
-                    <div class="px-4 py-3 bg-gradient-to-br from-white/10 to-white/5 border border-white/10 rounded-xl text-white glass-highlight">
-                        {{ user.email }}
-                    </div>
-                </div>
-                <div>
-                    <label class="block text-sm font-medium text-gray-300 mb-2">Newsletter Subscription</label>
-                    <div class="px-4 py-3 bg-gradient-to-br from-white/10 to-white/5 border border-white/10 rounded-xl text-white glass-highlight">
-                        {% if user.newsletter %}
-                            <i class="fas fa-check text-green-400 mr-2"></i>Subscribed
-                        {% else %}
-                            <i class="fas fa-times text-red-400 mr-2"></i>Not subscribed
+
+                <!-- Resume tab -->
+                <div data-profile-panel="resume" class="hidden rounded-2xl p-6 bg-gradient-to-br from-white/10 to-white/5 backdrop-blur-xl border border-white/10 shadow-lg glass-highlight">
+                    <div class="flex items-center justify-between mb-4">
+                        <h2 class="text-xl font-semibold text-white">Resume</h2>
+                        {% if user.resume_file %}
+                        <a href="{{ url_for('static', filename=user.resume_file) }}" target="_blank" 
+                           class="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition text-sm">
+                            <i class="fas fa-download mr-2"></i>Download
+                        </a>
                         {% endif %}
                     </div>
+
+                    {% if user.resume_file %}
+                        <div class="p-4 rounded-xl bg-white/5 border border-white/10 text-gray-300">
+                            <i class="fas fa-file-pdf text-red-400 mr-2"></i>
+                            <span class="text-white">{{ user.resume_file.split('/')[-1] }}</span>
+                        </div>
+                    {% else %}
+                        <div class="p-4 rounded-xl bg-white/5 border border-white/10 text-gray-300">
+                            <i class="fas fa-info-circle text-blue-400 mr-2"></i>
+                            No resume uploaded yet.
+                        </div>
+                    {% endif %}
+
+                    {% if editable %}
+                    <form method="post" enctype="multipart/form-data" action="{{ url_for('upload_resume', user_id=user.id) }}" class="mt-4">
+                        <div class="flex flex-col sm:flex-row gap-3">
+                            <input type="file" name="resume" accept=".pdf,.doc,.docx" required
+                                   class="flex-1 px-4 py-2 rounded-lg bg-white/10 text-white border border-white/20 file:mr-4 file:py-2 file:px-4 file:rounded file:border-0 file:bg-primary-500 file:text-white hover:file:bg-primary-600">
+                            <button type="submit" class="px-6 py-2 bg-primary-500 text-white rounded-lg hover:bg-primary-600 transition">
+                                <i class="fas fa-upload mr-2"></i>Upload
+                            </button>
+                        </div>
+                    </form>
+                    {% else %}
+                    <div class="mt-4 p-4 rounded-xl bg-blue-500/10 border border-blue-500/30">
+                        <p class="text-blue-100 text-sm"><i class="fas fa-info-circle mr-2"></i>Resume upload is available only in editable mode.</p>
+                    </div>
+                    {% endif %}
                 </div>
-            </div>
 
-            <!-- Action Buttons -->
-            <div class="flex space-x-4 mt-8">
-                <button data-ripple class="px-6 py-3 text-white font-semibold rounded-xl btn-liquid glass-highlight transform hover:scale-[1.02] transition-all duration-200">
-                    <i class="fas fa-edit mr-2"></i>Edit Profile
-                </button>
-                <button data-ripple class="px-6 py-3 bg-gradient-to-br from-white/10 to-white/5 text-white font-semibold rounded-xl border border-white/10 hover:bg-white/10 transform hover:scale-[1.02] transition-all duration-200 glass-highlight">
-                    <i class="fas fa-key mr-2"></i>Change Password
-                </button>
-            </div>
-        </div>
+                <!-- Salary tab (visible to Employee viewing their own, or HR/Admin viewing employees) -->
+                {% if can_view_salary and user.role == 'Employee' %}
+                <div data-profile-panel="salary" class="hidden rounded-2xl p-6 bg-gradient-to-br from-white/10 to-white/5 backdrop-blur-xl border border-white/10 shadow-lg glass-highlight">
+                    <div class="flex items-center justify-between mb-4">
+                        <div>
+                            <h2 class="text-xl font-semibold text-white">💰 Salary {{ 'Information' if is_self_view else 'Management' }}</h2>
+                            <p class="text-sm text-gray-400">{{ 'Your salary breakdown and components' if is_self_view else 'Component-based calculation with auto-validation (Admin & HR Only)' }}</p>
+                        </div>
+                        {% if salary_data and salary_data.is_locked %}
+                        <span class="px-3 py-1 bg-red-500/20 text-red-300 text-xs font-semibold rounded-full">
+                            <i class="fas fa-lock mr-1"></i>Locked (Payroll Processed)
+                        </span>
+                        {% endif %}
+                    </div>
 
-        <!-- Back to Dashboard -->
-        <div class="text-center">
-            <a href="{{ url_for('dashboard') }}" 
-               class="inline-flex items-center text-gray-400 hover:text-white transition-colors">
-                <i class="fas fa-arrow-left mr-2"></i>
-                Back to Dashboard
-            </a>
+                    {% if salary_data %}
+                    <!-- Salary Display/Edit Form -->
+                    {% if can_manage_salary and not is_self_view %}
+                    <!-- Admin/HR Edit Form with Component Breakdown -->
+                    <form method="post" action="{{ url_for('update_salary', user_id=user.id) }}">
+                        <div class="space-y-6">
+                            <!-- Core Wage Input -->
+                            <div class="p-5 rounded-xl bg-gradient-to-br from-blue-500/10 to-blue-600/5 border border-blue-500/30">
+                                <h3 class="text-lg font-semibold text-white mb-3 flex items-center">
+                                    <i class="fas fa-money-bill-wave text-blue-400 mr-2"></i>Core Wage
+                                </h3>
+                                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                    <div>
+                                        <label class="block text-sm font-medium text-gray-300 mb-2">Monthly Wage (₹) *</label>
+                                        <input type="number" name="monthly_wage" value="{{ salary_data.wage_details.monthly_wage }}" 
+                                               step="0.01" required {% if salary_data.is_locked %}disabled{% endif %}
+                                               class="w-full px-4 py-3 rounded-lg bg-white/10 text-white border border-white/20 focus:border-primary-500 focus:outline-none disabled:opacity-50 font-semibold text-lg">
+                                        <p class="text-xs text-gray-400 mt-1">All components calculated from this</p>
+                                    </div>
+                                    <div>
+                                        <label class="block text-sm font-medium text-gray-300 mb-2">Yearly Wage (₹)</label>
+                                        <div class="px-4 py-3 rounded-lg bg-white/5 border border-white/10 text-white font-mono text-lg">
+                                            ₹{{ "%.2f"|format(salary_data.wage_details.yearly_wage) }}
+                                        </div>
+                                        <p class="text-xs text-gray-400 mt-1">Auto-calculated (Monthly × 12)</p>
+                                    </div>
+                                </div>
+                            </div>
+                    {% else %}
+                    <!-- Employee Read-Only View -->
+                    <div class="space-y-6">
+                        <!-- Core Wage Display -->
+                        <div class="p-5 rounded-xl bg-gradient-to-br from-blue-500/10 to-blue-600/5 border border-blue-500/30">
+                            <h3 class="text-lg font-semibold text-white mb-3 flex items-center">
+                                <i class="fas fa-money-bill-wave text-blue-400 mr-2"></i>Your Salary
+                            </h3>
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-300 mb-2">Monthly Wage</label>
+                                    <div class="px-4 py-3 rounded-lg bg-white/10 border border-white/20 text-white font-semibold text-2xl">
+                                        ₹{{ "%.2f"|format(salary_data.wage_details.monthly_wage) }}
+                                    </div>
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-300 mb-2">Yearly Wage</label>
+                                    <div class="px-4 py-3 rounded-lg bg-white/10 border border-white/20 text-white font-semibold text-2xl">
+                                        ₹{{ "%.2f"|format(salary_data.wage_details.yearly_wage) }}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Salary Breakdown -->
+                        <div class="p-5 rounded-xl bg-gradient-to-br from-green-500/10 to-green-600/5 border border-green-500/30">
+                            <h3 class="text-lg font-semibold text-white mb-3 flex items-center">
+                                <i class="fas fa-calculator text-green-400 mr-2"></i>Salary Breakdown
+                            </h3>
+                            <div class="grid grid-cols-2 md:grid-cols-3 gap-3 text-sm">
+                                <div class="p-3 rounded-lg bg-white/5 border border-white/10">
+                                    <p class="text-gray-400 text-xs mb-1">Basic Salary</p>
+                                    <p class="text-white font-semibold">₹{{ "%.2f"|format(salary_data.breakdown.basic) }}</p>
+                                </div>
+                                <div class="p-3 rounded-lg bg-white/5 border border-white/10">
+                                    <p class="text-gray-400 text-xs mb-1">HRA</p>
+                                    <p class="text-white font-semibold">₹{{ "%.2f"|format(salary_data.breakdown.hra) }}</p>
+                                </div>
+                                <div class="p-3 rounded-lg bg-white/5 border border-white/10">
+                                    <p class="text-gray-400 text-xs mb-1">Standard Allowance</p>
+                                    <p class="text-white font-semibold">₹{{ "%.2f"|format(salary_data.breakdown.standard_allowance) }}</p>
+                                </div>
+                                <div class="p-3 rounded-lg bg-white/5 border border-white/10">
+                                    <p class="text-gray-400 text-xs mb-1">Performance Bonus</p>
+                                    <p class="text-white font-semibold">₹{{ "%.2f"|format(salary_data.breakdown.performance_bonus) }}</p>
+                                </div>
+                                <div class="p-3 rounded-lg bg-white/5 border border-white/10">
+                                    <p class="text-gray-400 text-xs mb-1">LTA</p>
+                                    <p class="text-white font-semibold">₹{{ "%.2f"|format(salary_data.breakdown.lta) }}</p>
+                                </div>
+                                <div class="p-3 rounded-lg bg-white/5 border border-white/10">
+                                    <p class="text-gray-400 text-xs mb-1">Fixed Allowance</p>
+                                    <p class="text-white font-semibold">₹{{ "%.2f"|format(salary_data.breakdown.fixed_allowance) }}</p>
+                                </div>
+                            </div>
+                            <div class="mt-4 p-3 rounded-lg bg-green-500/20 border border-green-500/40">
+                                <div class="flex items-center justify-between">
+                                    <span class="text-gray-300 font-medium">Gross Salary</span>
+                                    <span class="text-2xl font-bold text-green-400">₹{{ "%.2f"|format(salary_data.breakdown.gross_salary) }}</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Deductions -->
+                        <div class="p-5 rounded-xl bg-gradient-to-br from-red-500/10 to-red-600/5 border border-red-500/30">
+                            <h3 class="text-lg font-semibold text-white mb-3 flex items-center">
+                                <i class="fas fa-minus-circle text-red-400 mr-2"></i>Deductions
+                            </h3>
+                            <div class="space-y-3">
+                                <div class="flex justify-between items-center p-3 rounded-lg bg-white/5">
+                                    <span class="text-gray-300">Employee PF ({{ salary_data.pf.employee_percent }}%)</span>
+                                    <span class="text-white font-semibold">- ₹{{ "%.2f"|format(salary_data.pf.employee_amount) }}</span>
+                                </div>
+                                <div class="flex justify-between items-center p-3 rounded-lg bg-white/5">
+                                    <span class="text-gray-300">Professional Tax</span>
+                                    <span class="text-white font-semibold">- ₹{{ "%.2f"|format(salary_data.tax.professional_tax) }}</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Take Home Salary -->
+                        <div class="p-6 rounded-xl bg-gradient-to-br from-blue-500/20 to-blue-600/10 border border-blue-500/40">
+                            <div class="flex items-center justify-between">
+                                <div>
+                                    <p class="text-gray-300 mb-1">Net Take-Home Salary</p>
+                                    <p class="text-xs text-gray-400">Gross - (PF + Tax)</p>
+                                </div>
+                                <div class="text-right">
+                                    <p class="text-4xl font-bold text-blue-400">₹{{ "%.2f"|format(salary_data.net_salary) }}</p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Additional Info -->
+                        <div class="p-4 rounded-lg bg-white/5 border border-white/10">
+                            <p class="text-sm text-gray-400 mb-2"><strong>Employer PF Contribution:</strong> ₹{{ "%.2f"|format(salary_data.pf.employer_amount) }}</p>
+                            <p class="text-sm text-gray-400"><strong>Working Schedule:</strong> {{ salary_data.wage_details.working_days_per_week }} days/week, {{ salary_data.wage_details.daily_working_hours }}h/day</p>
+                        </div>
+                    </div>
+                    {% endif %}
+
+                            <!-- Component Breakdown Display -->
+                            <div class="p-5 rounded-xl bg-gradient-to-br from-green-500/10 to-green-600/5 border border-green-500/30">
+                                <h3 class="text-lg font-semibold text-white mb-3 flex items-center">
+                                    <i class="fas fa-calculator text-green-400 mr-2"></i>Salary Components (Auto-Calculated)
+                                </h3>
+                                <div class="grid grid-cols-2 md:grid-cols-3 gap-3 text-sm">
+                                    <div class="p-3 rounded-lg bg-white/5 border border-white/10">
+                                        <p class="text-gray-400 text-xs mb-1">Basic Salary</p>
+                                        <p class="text-white font-semibold">₹{{ "%.2f"|format(salary_data.breakdown.basic) }}</p>
+                                        <p class="text-xs text-green-400 mt-1">50% of Wage</p>
+                                    </div>
+                                    <div class="p-3 rounded-lg bg-white/5 border border-white/10">
+                                        <p class="text-gray-400 text-xs mb-1">HRA</p>
+                                        <p class="text-white font-semibold">₹{{ "%.2f"|format(salary_data.breakdown.hra) }}</p>
+                                        <p class="text-xs text-green-400 mt-1">50% of Basic</p>
+                                    </div>
+                                    <div class="p-3 rounded-lg bg-white/5 border border-white/10">
+                                        <p class="text-gray-400 text-xs mb-1">Standard Allowance</p>
+                                        <p class="text-white font-semibold">₹{{ "%.2f"|format(salary_data.breakdown.standard_allowance) }}</p>
+                                        <p class="text-xs text-blue-400 mt-1">Fixed</p>
+                                    </div>
+                                    <div class="p-3 rounded-lg bg-white/5 border border-white/10">
+                                        <p class="text-gray-400 text-xs mb-1">Performance Bonus</p>
+                                        <p class="text-white font-semibold">₹{{ "%.2f"|format(salary_data.breakdown.performance_bonus) }}</p>
+                                        <p class="text-xs text-green-400 mt-1">8.33% of Basic</p>
+                                    </div>
+                                    <div class="p-3 rounded-lg bg-white/5 border border-white/10">
+                                        <p class="text-gray-400 text-xs mb-1">LTA</p>
+                                        <p class="text-white font-semibold">₹{{ "%.2f"|format(salary_data.breakdown.lta) }}</p>
+                                        <p class="text-xs text-green-400 mt-1">8.33% of Basic</p>
+                                    </div>
+                                    <div class="p-3 rounded-lg bg-yellow-500/10 border border-yellow-500/30">
+                                        <p class="text-gray-400 text-xs mb-1">Fixed Allowance</p>
+                                        <p class="text-yellow-400 font-semibold">₹{{ "%.2f"|format(salary_data.breakdown.fixed_allowance) }}</p>
+                                        <p class="text-xs text-yellow-400 mt-1">Auto-Balanced ⚡</p>
+                                    </div>
+                                </div>
+                                <div class="mt-4 p-3 rounded-lg bg-green-500/20 border border-green-500/40">
+                                    <div class="flex items-center justify-between">
+                                        <span class="text-gray-300 font-medium">Gross Salary</span>
+                                        <span class="text-2xl font-bold text-green-400">₹{{ "%.2f"|format(salary_data.breakdown.gross_salary) }}</span>
+                                    </div>
+                                    <p class="text-xs text-gray-400 mt-1">✓ Components validated (sum = wage)</p>
+                                </div>
+                            </div>
+
+                            <!-- PF Settings -->
+                            <div class="pt-6 border-t border-white/10">
+                                <h3 class="text-lg font-semibold text-white mb-3 flex items-center">
+                                    <i class="fas fa-shield-alt text-purple-400 mr-2"></i>Provident Fund (PF)
+                                </h3>
+                                <p class="text-sm text-gray-400 mb-3">Calculated on Basic Salary only</p>
+                                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                    <div>
+                                        <label class="block text-sm font-medium text-gray-300 mb-2">Employee PF (%)</label>
+                                        <input type="number" name="employee_pf_percent" value="{{ salary_data.pf.employee_percent }}" 
+                                               step="0.1" min="0" max="100" {% if salary_data.is_locked %}disabled{% endif %}
+                                               class="w-full px-4 py-3 rounded-lg bg-white/10 text-white border border-white/20 focus:border-primary-500 focus:outline-none disabled:opacity-50">
+                                        <p class="text-xs text-purple-400 mt-1">Amount: ₹{{ "%.2f"|format(salary_data.pf.employee_amount) }}</p>
+                                    </div>
+                                    <div>
+                                        <label class="block text-sm font-medium text-gray-300 mb-2">Employer PF (%)</label>
+                                        <input type="number" name="employer_pf_percent" value="{{ salary_data.pf.employer_percent }}" 
+                                               step="0.1" min="0" max="100" {% if salary_data.is_locked %}disabled{% endif %}
+                                               class="w-full px-4 py-3 rounded-lg bg-white/10 text-white border border-white/20 focus:border-primary-500 focus:outline-none disabled:opacity-50">
+                                        <p class="text-xs text-purple-400 mt-1">Amount: ₹{{ "%.2f"|format(salary_data.pf.employer_amount) }}</p>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Tax & Deductions -->
+                            <div class="pt-6 border-t border-white/10">
+                                <h3 class="text-lg font-semibold text-white mb-3 flex items-center">
+                                    <i class="fas fa-file-invoice-dollar text-red-400 mr-2"></i>Tax Deductions
+                                </h3>
+                                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                    <div>
+                                        <label class="block text-sm font-medium text-gray-300 mb-2">Professional Tax (₹/month)</label>
+                                        <input type="number" name="professional_tax" value="{{ salary_data.tax.professional_tax }}" 
+                                               step="0.01" min="0" {% if salary_data.is_locked %}disabled{% endif %}
+                                               class="w-full px-4 py-3 rounded-lg bg-white/10 text-white border border-white/20 focus:border-primary-500 focus:outline-none disabled:opacity-50">
+                                    </div>
+                                    <div>
+                                        <label class="block text-sm font-medium text-gray-300 mb-2">Net Salary (Take Home)</label>
+                                        <div class="px-4 py-3 rounded-lg bg-blue-500/20 border border-blue-500/40 text-blue-400 font-bold text-xl">
+                                            ₹{{ "%.2f"|format(salary_data.net_salary) }}
+                                        </div>
+                                        <p class="text-xs text-gray-400 mt-1">Gross - (Employee PF + Tax)</p>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Working Schedule -->
+                            <div class="pt-6 border-t border-white/10">
+                                <h3 class="text-lg font-semibold text-white mb-3 flex items-center">
+                                    <i class="fas fa-clock text-gray-400 mr-2"></i>Working Schedule (Metadata)
+                                </h3>
+                                <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                                    <div>
+                                        <label class="block text-sm font-medium text-gray-300 mb-2">Working Days/Week</label>
+                                        <input type="number" name="working_days_per_week" value="{{ salary_data.wage_details.working_days_per_week }}" 
+                                               min="1" max="7" {% if salary_data.is_locked %}disabled{% endif %}
+                                               class="w-full px-4 py-3 rounded-lg bg-white/10 text-white border border-white/20 focus:border-primary-500 focus:outline-none disabled:opacity-50">
+                                    </div>
+                                    <div>
+                                        <label class="block text-sm font-medium text-gray-300 mb-2">Daily Hours</label>
+                                        <input type="number" name="daily_hours" value="{{ salary_data.wage_details.daily_working_hours }}" 
+                                               step="0.5" min="0" {% if salary_data.is_locked %}disabled{% endif %}
+                                               class="w-full px-4 py-3 rounded-lg bg-white/10 text-white border border-white/20 focus:border-primary-500 focus:outline-none disabled:opacity-50">
+                                    </div>
+                                    <div>
+                                        <label class="block text-sm font-medium text-gray-300 mb-2">Break Hours</label>
+                                        <input type="number" name="break_hours" value="{{ salary_data.wage_details.break_time_hours }}" 
+                                               step="0.5" min="0" {% if salary_data.is_locked %}disabled{% endif %}
+                                               class="w-full px-4 py-3 rounded-lg bg-white/10 text-white border border-white/20 focus:border-primary-500 focus:outline-none disabled:opacity-50">
+                                    </div>
+                                </div>
+                                <p class="text-xs text-gray-400 mt-2">Used for attendance, leave deduction, and payroll proration</p>
+                            </div>
+
+                            {% if not salary_data.is_locked %}
+                            <div class="flex justify-end pt-4">
+                                <button type="submit" class="px-8 py-3 bg-gradient-to-r from-primary-500 to-accent-500 text-white font-semibold rounded-xl hover:brightness-110 transition shadow-lg">
+                                    <i class="fas fa-save mr-2"></i>Update Salary & Recalculate
+                                </button>
+                            </div>
+                            {% else %}
+                            <div class="p-4 rounded-lg bg-red-500/10 border border-red-500/30">
+                                <p class="text-red-300 text-sm flex items-center">
+                                    <i class="fas fa-lock mr-2"></i>
+                                    Salary is locked. Cannot modify after payroll has been processed.
+                                </p>
+                            </div>
+                            {% endif %}
+                        </div>
+                    </form>
+                    {% else %}
+                    <!-- No salary data - Admin can add -->
+                    <div class="p-8 text-center rounded-xl bg-white/5 border border-white/10">
+                        <i class="fas fa-money-bill-wave text-gray-500 text-4xl mb-4"></i>
+                        <p class="text-gray-300 mb-2 font-semibold">No salary information configured</p>
+                        <p class="text-sm text-gray-400 mb-4">Set up salary structure for this employee</p>
+                        <form method="post" action="{{ url_for('update_salary', user_id=user.id) }}" class="max-w-md mx-auto space-y-3">
+                            <input type="number" name="monthly_wage" placeholder="Monthly Wage (₹)" step="0.01" required
+                                   class="w-full px-4 py-3 rounded-lg bg-white/10 text-white border border-white/20 focus:border-primary-500 focus:outline-none placeholder-gray-500">
+                            <button type="submit" class="w-full px-6 py-3 bg-gradient-to-r from-primary-500 to-accent-500 text-white font-semibold rounded-xl hover:brightness-110 transition">
+                                <i class="fas fa-plus mr-2"></i>Create Salary Structure
+                            </button>
+                            <p class="text-xs text-gray-400">All components will be auto-calculated based on wage</p>
+                        </form>
+                    </div>
+                    {% endif %}
+                </div>
+                {% endif %}
+            </div>
         </div>
     </div>
+
+    <!-- Sticky Back to Dashboard -->
+    <a href="{{ dashboard_url }}"
+       class="fixed bottom-24 right-6 z-30 px-5 py-3 text-white font-semibold rounded-xl btn-liquid glass-highlight transform hover:scale-[1.02] transition-all duration-200">
+        <i class="fas fa-arrow-left mr-2"></i>Back to Dashboard
+    </a>
 </section>
+{% endblock %}
+
+{% block scripts %}
+    <script src="https://unpkg.com/cropperjs@1.6.2/dist/cropper.min.js"></script>
+    <script src="{{ url_for('static', filename='js/profile.js') }}"></script>
 {% endblock %}

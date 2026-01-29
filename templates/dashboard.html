@@ -35,66 +35,74 @@
             <div data-hover-lift class="group rounded-2xl p-6 bg-gradient-to-br from-white/10 to-white/5 backdrop-blur-xl border border-white/10 shadow-lg transition-all duration-300 hover:-translate-y-1 hover:shadow-2xl hover:border-primary-500/30 glass-highlight">
                 <div class="flex items-center">
                     <div class="p-3 rounded-full bg-gradient-to-br from-blue-500 to-blue-600 group-hover:scale-110 transition-transform duration-300">
-                        <i class="fas fa-project-diagram text-white text-xl"></i>
+                        <i class="fas fa-clock text-white text-xl"></i>
                     </div>
                     <div class="ml-4">
-                        <p class="text-gray-400 text-sm">Active Projects</p>
-                        <p class="text-2xl font-bold text-white">12</p>
+                        <p class="text-gray-400 text-sm">Attendance This Month</p>
+                        <p class="text-2xl font-bold text-white">{{ user_data.attendance_this_month }}</p>
                     </div>
                 </div>
                 <div class="mt-4 flex items-center text-green-400 text-sm">
-                    <i class="fas fa-arrow-up mr-1"></i>
-                    <span>+2 this week</span>
+                    <i class="fas fa-calendar-check mr-1"></i>
+                    <span>{{ user_data.total_attendance }} total days</span>
                 </div>
             </div>
 
             <div data-hover-lift class="group rounded-2xl p-6 bg-gradient-to-br from-white/10 to-white/5 backdrop-blur-xl border border-white/10 shadow-lg transition-all duration-300 hover:-translate-y-1 hover:shadow-2xl hover:border-primary-500/30 glass-highlight">
                 <div class="flex items-center">
                     <div class="p-3 rounded-full bg-gradient-to-br from-green-500 to-green-600 group-hover:scale-110 transition-transform duration-300">
-                        <i class="fas fa-user text-white text-xl"></i>
+                        <i class="fas fa-briefcase text-white text-xl"></i>
                     </div>
                     <div class="ml-4">
-                        <p class="text-gray-400 text-sm">Member Since</p>
-                        <p class="text-2xl font-bold text-white">{{ user_data.joined }}</p>
+                        <p class="text-gray-400 text-sm">Work Hours (Month)</p>
+                        <p class="text-2xl font-bold text-white">{{ user_data.total_work_hours }}h</p>
                     </div>
                 </div>
-                <div class="mt-4 flex items-center text-green-400 text-sm">
-                    <i class="fas fa-calendar mr-1"></i>
-                    <span>Account created</span>
+                <div class="mt-4 flex items-center text-blue-400 text-sm">
+                    <i class="fas fa-chart-line mr-1"></i>
+                    <span>This month</span>
                 </div>
             </div>
 
             <div data-hover-lift class="group rounded-2xl p-6 bg-gradient-to-br from-white/10 to-white/5 backdrop-blur-xl border border-white/10 shadow-lg transition-all duration-300 hover:-translate-y-1 hover:shadow-2xl hover:border-primary-500/30 glass-highlight">
                 <div class="flex items-center">
                     <div class="p-3 rounded-full bg-gradient-to-br from-purple-500 to-purple-600 group-hover:scale-110 transition-transform duration-300">
-                        <i class="fas fa-users text-white text-xl"></i>
+                        <i class="fas fa-calendar-alt text-white text-xl"></i>
                     </div>
                     <div class="ml-4">
-                        <p class="text-gray-400 text-sm">Total Users</p>
-                        <p class="text-2xl font-bold text-white">{{ user_data.total_users }}</p>
+                        <p class="text-gray-400 text-sm">Leave Requests</p>
+                        <p class="text-2xl font-bold text-white">{{ user_data.pending_leaves }}</p>
                     </div>
                 </div>
-                <div class="mt-4 flex items-center text-blue-400 text-sm">
-                    <i class="fas fa-globe mr-1"></i>
-                    <span>Platform members</span>
+                <div class="mt-4 flex items-center text-yellow-400 text-sm">
+                    <i class="fas fa-hourglass-half mr-1"></i>
+                    <span>{{ user_data.approved_leaves }} approved</span>
                 </div>
             </div>
 
             <div data-hover-lift class="group rounded-2xl p-6 bg-gradient-to-br from-white/10 to-white/5 backdrop-blur-xl border border-white/10 shadow-lg transition-all duration-300 hover:-translate-y-1 hover:shadow-2xl hover:border-primary-500/30 glass-highlight">
                 <div class="flex items-center">
                     <div class="p-3 rounded-full bg-gradient-to-br from-orange-500 to-orange-600 group-hover:scale-110 transition-transform duration-300">
-                        <i class="fas fa-envelope text-white text-xl"></i>
+                        <i class="fas fa-user-check text-white text-xl"></i>
                     </div>
                     <div class="ml-4">
-                        <p class="text-gray-400 text-sm">Newsletter</p>
+                        <p class="text-gray-400 text-sm">Today's Status</p>
                         <p class="text-2xl font-bold text-white">
-                            {% if user_data.newsletter %}Subscribed{% else %}Not subscribed{% endif %}
+                            {% if user_data.today_attendance %}
+                                {% if user_data.today_attendance.check_out %}
+                                    Completed
+                                {% else %}
+                                    Active
+                                {% endif %}
+                            {% else %}
+                                Absent
+                            {% endif %}
                         </p>
                     </div>
                 </div>
-                <div class="mt-4 flex items-center {% if user_data.newsletter %}text-green-400{% else %}text-gray-400{% endif %} text-sm">
-                    <i class="fas {% if user_data.newsletter %}fa-check{% else %}fa-times{% endif %} mr-1"></i>
-                    <span>{% if user_data.newsletter %}Active{% else %}Inactive{% endif %}</span>
+                <div class="mt-4 flex items-center {% if user_data.today_attendance %}text-green-400{% else %}text-gray-400{% endif %} text-sm">
+                    <i class="fas {% if user_data.today_attendance %}fa-check{% else %}fa-times{% endif %} mr-1"></i>
+                    <span>{% if user_data.today_attendance %}Checked in{% else %}Not checked in{% endif %}</span>
                 </div>
             </div>
         </div>
@@ -106,58 +114,46 @@
                 <div data-hover-lift class="rounded-2xl p-6 bg-gradient-to-br from-white/10 to-white/5 backdrop-blur-xl border border-white/10 shadow-lg glass-highlight">
                     <div class="flex items-center justify-between mb-6">
                         <h3 class="text-xl font-semibold text-white">Recent Activity</h3>
-                        <button class="text-primary-400 hover:text-primary-300 transition-colors">
+                        <a href="{{ url_for('attendance_me') }}" class="text-primary-400 hover:text-primary-300 transition-colors">
                             View All
-                        </button>
+                        </a>
                     </div>
                     <div class="space-y-4">
-                        <div class="p-4 rounded-xl hover:bg-white/5 transition-colors duration-200">
-                            <div class="flex items-start space-x-3">
-                                <div class="p-2 bg-green-500/20 rounded-full">
-                                    <i class="fas fa-check text-green-400"></i>
-                                </div>
-                                <div class="flex-1">
-                                    <p class="text-white font-medium">Completed "User Authentication" task</p>
-                                    <p class="text-gray-400 text-sm">2 hours ago</p>
-                                </div>
-                            </div>
-                        </div>
-                        
-                        <div class="p-4 rounded-xl hover:bg-white/5 transition-colors duration-200">
-                            <div class="flex items-start space-x-3">
-                                <div class="p-2 bg-blue-500/20 rounded-full">
-                                    <i class="fas fa-plus text-blue-400"></i>
-                                </div>
-                                <div class="flex-1">
-                                    <p class="text-white font-medium">Created new project "Mobile App"</p>
-                                    <p class="text-gray-400 text-sm">4 hours ago</p>
+                        {% if user_data.recent_attendance or user_data.recent_leaves %}
+                            {% for attendance in user_data.recent_attendance %}
+                            <div class="p-4 rounded-xl hover:bg-white/5 transition-colors duration-200">
+                                <div class="flex items-start space-x-3">
+                                    <div class="p-2 bg-{% if attendance.status == 'Present' %}green{% elif attendance.status == 'Half Day' %}yellow{% else %}blue{% endif %}-500/20 rounded-full">
+                                        <i class="fas fa-{% if attendance.status == 'Present' %}check{% elif attendance.status == 'Half Day' %}clock{% else %}calendar{% endif %} text-{% if attendance.status == 'Present' %}green{% elif attendance.status == 'Half Day' %}yellow{% else %}blue{% endif %}-400"></i>
+                                    </div>
+                                    <div class="flex-1">
+                                        <p class="text-white font-medium">{{ attendance.status }} - {{ attendance.work_hours }}h worked</p>
+                                        <p class="text-gray-400 text-sm">{{ attendance.date.strftime('%B %d, %Y') }}</p>
+                                    </div>
                                 </div>
                             </div>
-                        </div>
-                        
-                        <div class="p-4 rounded-xl hover:bg-white/5 transition-colors duration-200">
-                            <div class="flex items-start space-x-3">
-                                <div class="p-2 bg-purple-500/20 rounded-full">
-                                    <i class="fas fa-users text-purple-400"></i>
-                                </div>
-                                <div class="flex-1">
-                                    <p class="text-white font-medium">Added 2 team members to "Web Dashboard"</p>
-                                    <p class="text-gray-400 text-sm">Yesterday</p>
-                                </div>
-                            </div>
-                        </div>
-                        
-                        <div class="p-4 rounded-xl hover:bg-white/5 transition-colors duration-200">
-                            <div class="flex items-start space-x-3">
-                                <div class="p-2 bg-orange-500/20 rounded-full">
-                                    <i class="fas fa-rocket text-orange-400"></i>
-                                </div>
-                                <div class="flex-1">
-                                    <p class="text-white font-medium">Deployed "API Gateway" to production</p>
-                                    <p class="text-gray-400 text-sm">2 days ago</p>
+                            {% endfor %}
+                            
+                            {% for leave in user_data.recent_leaves %}
+                            <div class="p-4 rounded-xl hover:bg-white/5 transition-colors duration-200">
+                                <div class="flex items-start space-x-3">
+                                    <div class="p-2 bg-{% if leave.status == 'Approved' %}green{% elif leave.status == 'Pending' %}yellow{% else %}red{% endif %}-500/20 rounded-full">
+                                        <i class="fas fa-umbrella-beach text-{% if leave.status == 'Approved' %}green{% elif leave.status == 'Pending' %}yellow{% else %}red{% endif %}-400"></i>
+                                    </div>
+                                    <div class="flex-1">
+                                        <p class="text-white font-medium">Leave Request - {{ leave.status }}</p>
+                                        <p class="text-gray-400 text-sm">{{ leave.start_date.strftime('%b %d') }} to {{ leave.end_date.strftime('%b %d, %Y') }}</p>
+                                    </div>
                                 </div>
                             </div>
-                        </div>
+                            {% endfor %}
+                        {% else %}
+                            <div class="p-8 text-center">
+                                <i class="fas fa-inbox text-gray-500 text-4xl mb-3"></i>
+                                <p class="text-gray-400">No recent activity</p>
+                                <p class="text-gray-500 text-sm mt-1">Start by marking your attendance</p>
+                            </div>
+                        {% endif %}
                     </div>
                 </div>
             </div>
@@ -193,65 +189,74 @@
 
                 <!-- Progress Overview -->
                 <div data-hover-lift class="rounded-2xl p-6 bg-gradient-to-br from-white/10 to-white/5 backdrop-blur-xl border border-white/10 shadow-lg glass-highlight">
-                    <h3 class="text-lg font-semibold text-white mb-4">Current Sprint</h3>
+                    <h3 class="text-lg font-semibold text-white mb-4">Monthly Attendance Progress</h3>
                     <div class="space-y-4">
+                        {% set working_days = 22 %}
+                        {% set attendance_percentage = (user_data.attendance_this_month / working_days * 100) if working_days > 0 else 0 %}
+                        
                         <div>
                             <div class="flex justify-between text-sm mb-2">
-                                <span class="text-gray-400">Frontend Development</span>
-                                <span class="text-white">75%</span>
+                                <span class="text-gray-400">Days Present</span>
+                                <span class="text-white">{{ user_data.attendance_this_month }}/{{ working_days }}</span>
                             </div>
                             <div class="w-full bg-white/10 rounded-full h-2">
                                 <div class="bg-gradient-to-r from-primary-500 to-primary-600 h-2 rounded-full progress-bar" 
-                                     style="width: 75%"></div>
+                                     style="width: {{ attendance_percentage }}%"></div>
                             </div>
                         </div>
                         
+                        {% set work_hours_target = 176 %}
+                        {% set work_hours_percentage = (user_data.total_work_hours / work_hours_target * 100) if work_hours_target > 0 else 0 %}
+                        
                         <div>
                             <div class="flex justify-between text-sm mb-2">
-                                <span class="text-gray-400">Backend API</span>
-                                <span class="text-white">90%</span>
+                                <span class="text-gray-400">Work Hours</span>
+                                <span class="text-white">{{ user_data.total_work_hours }}h/{{ work_hours_target }}h</span>
                             </div>
                             <div class="w-full bg-white/10 rounded-full h-2">
                                 <div class="bg-gradient-to-r from-green-500 to-green-600 h-2 rounded-full progress-bar" 
-                                     style="width: 90%"></div>
+                                     style="width: {{ work_hours_percentage }}%"></div>
                             </div>
                         </div>
                         
+                        {% set leave_balance = 12 - user_data.approved_leaves %}
+                        {% set leave_percentage = (leave_balance / 12 * 100) if leave_balance >= 0 else 0 %}
+                        
                         <div>
                             <div class="flex justify-between text-sm mb-2">
-                                <span class="text-gray-400">Testing</span>
-                                <span class="text-white">45%</span>
+                                <span class="text-gray-400">Leave Balance</span>
+                                <span class="text-white">{{ leave_balance }}/12 days</span>
                             </div>
                             <div class="w-full bg-white/10 rounded-full h-2">
                                 <div class="bg-gradient-to-r from-yellow-500 to-yellow-600 h-2 rounded-full progress-bar" 
-                                     style="width: 45%"></div>
+                                     style="width: {{ leave_percentage }}%"></div>
                             </div>
                         </div>
                     </div>
                 </div>
 
-                <!-- Team Status -->
+                <!-- Quick Info -->
                 <div data-hover-lift class="rounded-2xl p-6 bg-gradient-to-br from-white/10 to-white/5 backdrop-blur-xl border border-white/10 shadow-lg glass-highlight">
-                    <h3 class="text-lg font-semibold text-white mb-4">Team Online</h3>
+                    <h3 class="text-lg font-semibold text-white mb-4">Account Info</h3>
                     <div class="space-y-3">
-                        <div class="flex items-center space-x-3">
-                            <div class="w-8 h-8 bg-gradient-to-br from-primary-500 to-primary-600 rounded-full flex items-center justify-center">
-                                <span class="text-white text-sm font-bold">AJ</span>
-                            </div>
-                            <div class="flex-1">
-                                <p class="text-white font-medium">Alex Johnson</p>
-                                <p class="text-green-400 text-xs flex items-center">
-                                    <span class="w-2 h-2 bg-green-400 rounded-full mr-1"></span>
-                                    Online
-                                </p>
-                            </div>
+                        <div class="flex items-center justify-between">
+                            <span class="text-gray-400 text-sm">Member Since</span>
+                            <span class="text-white font-medium">{{ user_data.joined }}</span>
                         </div>
-                        
-                        <div class="flex items-center space-x-3">
-                            <div class="w-8 h-8 bg-gradient-to-br from-pink-500 to-pink-600 rounded-full flex items-center justify-center">
-                                <span class="text-white text-sm font-bold">SC</span>
-                            </div>
-                            <div class="flex-1">
+                        <div class="flex items-center justify-between">
+                            <span class="text-gray-400 text-sm">Role</span>
+                            <span class="text-white font-medium">{{ user_data.role }}</span>
+                        </div>
+                        <div class="flex items-center justify-between">
+                            <span class="text-gray-400 text-sm">Login ID</span>
+                            <span class="text-white font-medium">{{ user_data.login_id }}</span>
+                        </div>
+                        <div class="flex items-center justify-between">
+                            <span class="text-gray-400 text-sm">Total Employees</span>
+                            <span class="text-white font-medium">{{ user_data.total_users }}</span>
+                        </div>
+                    </div>
+                </div>
                                 <p class="text-white font-medium">Sarah Chen</p>
                                 <p class="text-green-400 text-xs flex items-center">
                                     <span class="w-2 h-2 bg-green-400 rounded-full mr-1"></span>

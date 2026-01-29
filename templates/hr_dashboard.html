@@ -84,6 +84,40 @@
             </div>
         </div>
 
+        <!-- Personal Attendance Widget -->
+        <div class="mb-8">
+            <div class="rounded-2xl p-6 bg-gradient-to-br from-white/10 to-white/5 backdrop-blur-xl border border-white/10 shadow-lg glass-highlight">
+                <h3 class="text-lg font-semibold text-white mb-4 flex items-center">
+                    <i class="fas fa-user-clock text-blue-400 mr-2"></i>
+                    My Attendance Today
+                </h3>
+                <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+                    <div class="bg-white/5 rounded-xl p-4 border border-white/10">
+                        <div class="text-sm text-gray-400 mb-1">Check In</div>
+                        <div class="text-xl font-bold text-white" id="checkInTime">--:--</div>
+                    </div>
+                    <div class="bg-white/5 rounded-xl p-4 border border-white/10">
+                        <div class="text-sm text-gray-400 mb-1">Check Out</div>
+                        <div class="text-xl font-bold text-white" id="checkOutTime">--:--</div>
+                    </div>
+                    <div class="bg-white/5 rounded-xl p-4 border border-white/10">
+                        <div class="text-sm text-gray-400 mb-1">Time Active</div>
+                        <div class="text-xl font-bold text-white" id="timeActive">0h 0m</div>
+                    </div>
+                    <div class="flex gap-2">
+                        <button id="checkInBtn" onclick="checkIn()" 
+                                class="flex-1 px-4 py-3 bg-gradient-to-r from-green-500 to-green-600 text-white rounded-xl font-semibold hover:shadow-lg hover:shadow-green-500/50 transition-all disabled:opacity-50 disabled:cursor-not-allowed text-sm">
+                            <i class="fas fa-sign-in-alt mr-1"></i>Check In
+                        </button>
+                        <button id="checkOutBtn" onclick="checkOut()" disabled
+                                class="flex-1 px-4 py-3 bg-gradient-to-r from-red-500 to-red-600 text-white rounded-xl font-semibold hover:shadow-lg hover:shadow-red-500/50 transition-all disabled:opacity-50 disabled:cursor-not-allowed text-sm">
+                            <i class="fas fa-sign-out-alt mr-1"></i>Check Out
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
         <!-- Main Content Grid -->
         <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
             <!-- Quick Actions -->
@@ -238,5 +272,126 @@ function updateDateTime() {
 }
 updateDateTime();
 setInterval(updateDateTime, 60000);
+
+// Attendance Functions
+function updateTimeActive(checkInTime) {
+    if (!checkInTime) return;
+    
+    const now = new Date();
+    const checkIn = new Date(checkInTime);
+    const diffMs = now - checkIn;
+    const diffMins = Math.floor(diffMs / 60000);
+    const hours = Math.floor(diffMins / 60);
+    const minutes = diffMins % 60;
+    
+    document.getElementById('timeActive').textContent = `${hours}h ${minutes}m`;
+}
+
+async function fetchTodayStatus() {
+    try {
+        const response = await fetch('/api/attendance/today');
+        const data = await response.json();
+        
+        if (data.success) {
+            const status = data.attendance;
+            
+            if (status.check_in) {
+                document.getElementById('checkInTime').textContent = new Date(status.check_in).toLocaleTimeString('en-US', {
+                    hour: '2-digit',
+                    minute: '2-digit',
+                    hour12: true
+                });
+                document.getElementById('checkInBtn').disabled = true;
+                document.getElementById('checkOutBtn').disabled = false;
+                
+                if (status.check_out) {
+                    document.getElementById('checkOutTime').textContent = new Date(status.check_out).toLocaleTimeString('en-US', {
+                        hour: '2-digit',
+                        minute: '2-digit',
+                        hour12: true
+                    });
+                    document.getElementById('checkOutBtn').disabled = true;
+                    
+                    const checkOut = new Date(status.check_out);
+                    const checkIn = new Date(status.check_in);
+                    const diffMs = checkOut - checkIn;
+                    const diffMins = Math.floor(diffMs / 60000);
+                    const hours = Math.floor(diffMins / 60);
+                    const minutes = diffMins % 60;
+                    document.getElementById('timeActive').textContent = `${hours}h ${minutes}m`;
+                } else {
+                    updateTimeActive(status.check_in);
+                }
+            }
+        }
+    } catch (error) {
+        console.error('Error fetching attendance status:', error);
+    }
+}
+
+async function checkIn() {
+    if (!confirm('Are you sure you want to check in?')) return;
+    
+    try {
+        const response = await fetch('/api/attendance/checkin', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            }
+        });
+        
+        const data = await response.json();
+        
+        if (data.success) {
+            window.location.reload();
+        } else {
+            alert('Error: ' + data.message);
+        }
+    } catch (error) {
+        alert('Error checking in: ' + error);
+    }
+}
+
+async function checkOut() {
+    if (!confirm('Are you sure you want to check out?')) return;
+    
+    try {
+        const response = await fetch('/api/attendance/checkout', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            }
+        });
+        
+        const data = await response.json();
+        
+        if (data.success) {
+            window.location.reload();
+        } else {
+            alert('Error: ' + data.message);
+        }
+    } catch (error) {
+        alert('Error checking out: ' + error);
+    }
+}
+
+// Initialize
+fetchTodayStatus();
+setInterval(function() {
+    const checkInTime = document.getElementById('checkInTime').textContent;
+    if (checkInTime !== '--:--') {
+        const checkOutTime = document.getElementById('checkOutTime').textContent;
+        if (checkOutTime === '--:--') {
+            const today = new Date();
+            const [time, period] = checkInTime.split(' ');
+            const [hours, minutes] = time.split(':');
+            let hour = parseInt(hours);
+            if (period === 'PM' && hour !== 12) hour += 12;
+            if (period === 'AM' && hour === 12) hour = 0;
+            today.setHours(hour, parseInt(minutes), 0, 0);
+            updateTimeActive(today.toISOString());
+        }
+    }
+}, 60000);
 </script>
 {% endblock %}

@@ -115,6 +115,24 @@
                         {% endif %}
                     </div>
                 </div>
+                
+                <!-- Salary Status (HR/Admin only) -->
+                {% if session.role in ['Admin', 'HR Officer'] and employee.role == 'Employee' %}
+                <div class="space-y-2">
+                    <label class="text-sm font-medium text-gray-400">Salary Status</label>
+                    <div class="px-4 py-3 rounded-lg bg-white/5 border border-white/10">
+                        {% if employee.has_salary %}
+                        <span class="text-green-400 font-semibold">
+                            <i class="fas fa-check-circle mr-2"></i>Configured
+                        </span>
+                        {% else %}
+                        <span class="text-yellow-400 font-semibold">
+                            <i class="fas fa-exclamation-triangle mr-2"></i>Not Set
+                        </span>
+                        {% endif %}
+                    </div>
+                </div>
+                {% endif %}
             </div>
 
             <!-- Today's Attendance Details -->
@@ -143,28 +161,37 @@
                 <div class="flex items-start space-x-3">
                     <i class="fas fa-info-circle text-blue-400 text-lg mt-0.5"></i>
                     <div>
-                        <p class="text-blue-200 font-medium mb-1">View-Only Mode</p>
+                        <p class="text-blue-200 font-medium mb-1">Quick View Mode</p>
                         <p class="text-blue-100 text-sm">
-                            This profile is in read-only mode. You cannot edit these details. 
-                            To edit your own profile, click "My Profile" from the user menu.
+                            {% if session.role in ['Admin', 'HR Officer'] %}
+                            This is a quick view of employee details. To manage salary, edit profile, or update personal information, click the "Manage Profile & Salary" button below.
+                            {% else %}
+                            This profile is in read-only mode. To edit your own profile, click "My Profile" from the user menu.
+                            {% endif %}
                         </p>
                     </div>
                 </div>
             </div>
 
             <!-- Actions -->
-            <div class="mt-8 flex justify-between">
+            <div class="mt-8 flex flex-wrap gap-3 justify-between">
                 <a href="{{ url_for('employees') }}" 
                    class="px-6 py-3 rounded-lg bg-white/10 hover:bg-white/20 text-white font-semibold transition-colors border border-white/10">
                     <i class="fas fa-arrow-left mr-2"></i>Back to Employees
                 </a>
                 
-                {% if session.role in ['Admin', 'HR Officer'] %}
-                <a href="{{ url_for('attendance_list', employee_id=employee.id) }}" 
-                   class="px-6 py-3 rounded-lg bg-gradient-to-r from-primary-600 to-accent-600 hover:from-primary-700 hover:to-accent-700 text-white font-semibold transition-all duration-300 shadow-lg">
-                    <i class="fas fa-calendar-check mr-2"></i>View Attendance History
-                </a>
-                {% endif %}
+                <div class="flex gap-3">
+                    {% if session.role in ['Admin', 'HR Officer'] %}
+                    <a href="{{ url_for('profile', user_id=employee.id) }}" 
+                       class="px-6 py-3 rounded-lg bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white font-semibold transition-all duration-300 shadow-lg">
+                        <i class="fas fa-user-edit mr-2"></i>Manage Profile & Salary
+                    </a>
+                    <a href="{{ url_for('attendance_list', employee_id=employee.id) }}" 
+                       class="px-6 py-3 rounded-lg bg-gradient-to-r from-primary-600 to-accent-600 hover:from-primary-700 hover:to-accent-700 text-white font-semibold transition-all duration-300 shadow-lg">
+                        <i class="fas fa-calendar-check mr-2"></i>View Attendance
+                    </a>
+                    {% endif %}
+                </div>
             </div>
         </div>
     </div>

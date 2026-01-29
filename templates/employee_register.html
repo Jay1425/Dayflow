@@ -1,0 +1,163 @@
+{% extends "base.html" %}
+
+{% block title %}Employee Registration - Dayflow{% endblock %}
+
+{% block content %}
+<section class="min-h-screen flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
+    <div class="max-w-2xl w-full space-y-8">
+        <!-- Header -->
+        <div class="text-center">
+            <div class="mx-auto h-16 w-16 bg-gradient-to-br from-green-500 to-blue-500 rounded-full flex items-center justify-center mb-6">
+                <i class="fas fa-user-plus text-2xl text-white"></i>
+            </div>
+            <h2 class="text-3xl font-bold text-white mb-2">Employee Registration</h2>
+            <p class="text-gray-400">Join your company on Dayflow HRMS</p>
+        </div>
+
+        <!-- Registration Form -->
+        <div class="bg-gradient-to-br from-white/10 to-white/5 backdrop-blur-xl rounded-2xl shadow-2xl p-8 border border-white/10 glass-highlight">
+            <form method="POST" class="space-y-6">
+                <!-- Info Notice -->
+                <div class="bg-blue-500/10 border border-blue-500/30 backdrop-blur-xl rounded-xl p-4">
+                    <div class="flex items-start">
+                        <i class="fas fa-info-circle text-blue-400 mr-2 mt-1"></i>
+                        <div>
+                            <p class="text-blue-300 text-sm">Your registration will require HR approval before you can access the system.</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Full Name -->
+                <div>
+                    <label for="fullname" class="block text-sm font-medium text-gray-300 mb-2">
+                        <i class="fas fa-user mr-2"></i>Full Name *
+                    </label>
+                    <input data-form-input type="text" id="fullname" name="fullname" required
+                           class="w-full px-4 py-3 bg-gradient-to-br from-white/10 to-white/5 border border-white/10 rounded-xl text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-primary-500/60 focus:border-primary-500/40 transition glass-highlight" 
+                           placeholder="e.g., John Doe">
+                </div>
+
+                <!-- Email -->
+                <div>
+                    <label for="email" class="block text-sm font-medium text-gray-300 mb-2">
+                        <i class="fas fa-envelope mr-2"></i>Email Address *
+                    </label>
+                    <input data-form-input type="email" id="email" name="email" required
+                           class="w-full px-4 py-3 bg-gradient-to-br from-white/10 to-white/5 border border-white/10 rounded-xl text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-primary-500/60 focus:border-primary-500/40 transition glass-highlight" 
+                           placeholder="john.doe@example.com">
+                </div>
+
+                <!-- Company Selection -->
+                <div>
+                    <label for="company_id" class="block text-sm font-medium text-gray-300 mb-2">
+                        <i class="fas fa-building mr-2"></i>Company *
+                    </label>
+                    <select data-form-input id="company_id" name="company_id" required
+                            class="w-full px-4 py-3 bg-gradient-to-br from-white/10 to-white/5 border border-white/10 rounded-xl text-white focus:outline-none focus:ring-2 focus:ring-primary-500/60 focus:border-primary-500/40 transition glass-highlight">
+                        <option value="">Select your company</option>
+                        {% for company in companies %}
+                        <option value="{{ company.id }}">{{ company.name }} ({{ company.company_code }})</option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <!-- Department -->
+                <div>
+                    <label for="department" class="block text-sm font-medium text-gray-300 mb-2">
+                        <i class="fas fa-sitemap mr-2"></i>Department
+                    </label>
+                    <input data-form-input type="text" id="department" name="department"
+                           class="w-full px-4 py-3 bg-gradient-to-br from-white/10 to-white/5 border border-white/10 rounded-xl text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-primary-500/60 focus:border-primary-500/40 transition glass-highlight" 
+                           placeholder="e.g., Engineering, Sales">
+                </div>
+
+                <!-- Designation -->
+                <div>
+                    <label for="designation" class="block text-sm font-medium text-gray-300 mb-2">
+                        <i class="fas fa-briefcase mr-2"></i>Designation
+                    </label>
+                    <input data-form-input type="text" id="designation" name="designation"
+                           class="w-full px-4 py-3 bg-gradient-to-br from-white/10 to-white/5 border border-white/10 rounded-xl text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-primary-500/60 focus:border-primary-500/40 transition glass-highlight" 
+                           placeholder="e.g., Software Engineer">
+                </div>
+
+                <!-- Password -->
+                <div>
+                    <label for="password" class="block text-sm font-medium text-gray-300 mb-2">
+                        <i class="fas fa-lock mr-2"></i>Password *
+                    </label>
+                    <div class="relative">
+                        <input data-form-input type="password" id="password" name="password" required minlength="8"
+                               class="w-full px-4 py-3 bg-gradient-to-br from-white/10 to-white/5 border border-white/10 rounded-xl text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-primary-500/60 focus:border-primary-500/40 pr-10 transition glass-highlight" 
+                               placeholder="Create a strong password">
+                        <button type="button" onclick="togglePassword('password')"
+                                class="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-400 hover:text-white transition-colors">
+                            <i id="password-toggle" class="fas fa-eye"></i>
+                        </button>
+                    </div>
+                    <p class="text-xs text-gray-500 mt-1">Min. 8 chars, uppercase, lowercase, number, special char</p>
+                </div>
+
+                <!-- Confirm Password -->
+                <div>
+                    <label for="confirm_password" class="block text-sm font-medium text-gray-300 mb-2">
+                        <i class="fas fa-check-double mr-2"></i>Confirm Password *
+                    </label>
+                    <div class="relative">
+                        <input data-form-input type="password" id="confirm_password" name="confirm_password" required minlength="8"
+                               class="w-full px-4 py-3 bg-gradient-to-br from-white/10 to-white/5 border border-white/10 rounded-xl text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-primary-500/60 focus:border-primary-500/40 pr-10 transition glass-highlight" 
+                               placeholder="Re-enter password">
+                        <button type="button" onclick="togglePassword('confirm_password')"
+                                class="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-400 hover:text-white transition-colors">
+                            <i id="confirm_password-toggle" class="fas fa-eye"></i>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Submit Button -->
+                <button type="submit" data-ripple
+                    class="w-full py-3 text-lg text-white font-semibold rounded-xl btn-liquid glass-highlight focus:outline-none focus:ring-2 focus:ring-white/30 transform hover:scale-[1.02] transition-all duration-200">
+                    <i class="fas fa-user-check mr-2"></i>
+                    Register
+                </button>
+            </form>
+
+            <!-- Login Link -->
+            <div class="text-center mt-6">
+                <p class="text-gray-400 text-sm">
+                    Already have an account? 
+                    <a href="{{ url_for('login') }}" class="text-blue-400 hover:text-blue-300 font-medium">
+                        Login here
+                    </a>
+                </p>
+            </div>
+        </div>
+
+        <!-- Back to Home -->
+        <div class="text-center">
+            <a href="{{ url_for('home') }}" 
+               class="inline-flex items-center text-gray-400 hover:text-white">
+                <i class="fas fa-arrow-left mr-2"></i>
+                Back to Home
+            </a>
+        </div>
+    </div>
+</section>
+
+<script>
+function togglePassword(fieldId) {
+    const passwordField = document.getElementById(fieldId);
+    const toggleIcon = document.getElementById(fieldId + '-toggle');
+    
+    if (passwordField.type === 'password') {
+        passwordField.type = 'text';
+        toggleIcon.classList.remove('fa-eye');
+        toggleIcon.classList.add('fa-eye-slash');
+    } else {
+        passwordField.type = 'password';
+        toggleIcon.classList.remove('fa-eye-slash');
+        toggleIcon.classList.add('fa-eye');
+    }
+}
+</script>
+{% endblock %}

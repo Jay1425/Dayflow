@@ -1,0 +1,436 @@
+{% extends "base.html" %}
+
+{% block title %}Time-Off Management - Dayflow{% endblock %}
+
+{% block content %}
+<div class="min-h-screen">
+    <!-- Header -->
+    <div class="bg-gradient-to-br from-white/10 to-white/5 backdrop-blur-xl border-b border-white/10 shadow-lg glass-highlight">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+            <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-6 animate-fade-in">
+                <div>
+                    <p class="text-sm uppercase tracking-wide text-primary-300 mb-1">Time-Off Management</p>
+                    <h1 class="text-3xl font-bold text-white mb-2">
+                        <i class="fas fa-clipboard-list mr-3"></i>Leave Requests
+                    </h1>
+                    <p class="text-gray-300">Review and manage all employee leave requests</p>
+                </div>
+            </div>
+
+            <!-- Statistics Dashboard -->
+            <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+                <div data-hover-lift class="group rounded-2xl p-6 bg-gradient-to-br from-white/10 to-white/5 backdrop-blur-xl border border-white/10 shadow-lg transition-all duration-300 hover:-translate-y-1 hover:shadow-2xl hover:border-primary-500/30 glass-highlight">
+                    <div class="flex items-center">
+                        <div class="p-3 rounded-full bg-gradient-to-br from-amber-500 to-amber-600 group-hover:scale-110 transition-transform duration-300">
+                            <i class="fas fa-clock text-white text-xl"></i>
+                        </div>
+                        <div class="ml-4">
+                            <p class="text-gray-400 text-sm">Pending Requests</p>
+                            <h3 class="text-2xl font-bold text-white">{{ stats.pending_requests }}</h3>
+                        </div>
+                    </div>
+                </div>
+
+                <div data-hover-lift class="group rounded-2xl p-6 bg-gradient-to-br from-white/10 to-white/5 backdrop-blur-xl border border-white/10 shadow-lg transition-all duration-300 hover:-translate-y-1 hover:shadow-2xl hover:border-primary-500/30 glass-highlight">
+                    <div class="flex items-center">
+                        <div class="p-3 rounded-full bg-gradient-to-br from-blue-500 to-blue-600 group-hover:scale-110 transition-transform duration-300">
+                            <i class="fas fa-user-clock text-white text-xl"></i>
+                        </div>
+                        <div class="ml-4">
+                            <p class="text-gray-400 text-sm">On Leave Today</p>
+                            <h3 class="text-2xl font-bold text-white">{{ stats.on_leave_today }}</h3>
+                        </div>
+                    </div>
+                </div>
+
+                <div data-hover-lift class="group rounded-2xl p-6 bg-gradient-to-br from-white/10 to-white/5 backdrop-blur-xl border border-white/10 shadow-lg transition-all duration-300 hover:-translate-y-1 hover:shadow-2xl hover:border-primary-500/30 glass-highlight">
+                    <div class="flex items-center">
+                        <div class="p-3 rounded-full bg-gradient-to-br from-green-500 to-green-600 group-hover:scale-110 transition-transform duration-300">
+                            <i class="fas fa-check-circle text-white text-xl"></i>
+                        </div>
+                        <div class="ml-4">
+                            <p class="text-gray-400 text-sm">Approved Days ({{ current_year }})</p>
+                            <h3 class="text-2xl font-bold text-white">{{ stats.approved_days }}</h3>
+                        </div>
+                    </div>
+                </div>
+
+                <div data-hover-lift class="group rounded-2xl p-6 bg-gradient-to-br from-white/10 to-white/5 backdrop-blur-xl border border-white/10 shadow-lg transition-all duration-300 hover:-translate-y-1 hover:shadow-2xl hover:border-primary-500/30 glass-highlight">
+                    <div class="flex items-center">
+                        <div class="p-3 rounded-full bg-gradient-to-br from-purple-500 to-purple-600 group-hover:scale-110 transition-transform duration-300">
+                            <i class="fas fa-calendar-alt text-white text-xl"></i>
+                        </div>
+                        <div class="ml-4">
+                            <p class="text-gray-400 text-sm">Upcoming (30 days)</p>
+                            <h3 class="text-2xl font-bold text-white">{{ stats.upcoming_leaves }}</h3>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Filters -->
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+        <div class="rounded-2xl p-6 bg-gradient-to-br from-white/10 to-white/5 backdrop-blur-xl border border-white/10 shadow-lg glass-highlight">
+            <form method="GET" action="{{ url_for('time_off_all') }}" class="grid grid-cols-1 md:grid-cols-4 gap-4">
+                <!-- Status Filter -->
+                <div>
+                    <label class="block text-gray-400 text-sm mb-2">Status</label>
+                    <select name="status" class="w-full bg-white/10 border border-white/20 rounded-xl px-4 py-2 text-white focus:outline-none focus:border-primary-500">
+                        <option value="all" {% if current_filter.status == 'all' %}selected{% endif %}>All Statuses</option>
+                        <option value="PENDING" {% if current_filter.status == 'PENDING' %}selected{% endif %}>Pending</option>
+                        <option value="APPROVED" {% if current_filter.status == 'APPROVED' %}selected{% endif %}>Approved</option>
+                        <option value="REJECTED" {% if current_filter.status == 'REJECTED' %}selected{% endif %}>Rejected</option>
+                    </select>
+                </div>
+
+                <!-- Leave Type Filter -->
+                <div>
+                    <label class="block text-gray-400 text-sm mb-2">Leave Type</label>
+                    <select name="type" class="w-full bg-white/10 border border-white/20 rounded-xl px-4 py-2 text-white focus:outline-none focus:border-primary-500">
+                        <option value="all" {% if current_filter.type == 'all' %}selected{% endif %}>All Types</option>
+                        <option value="PAID" {% if current_filter.type == 'PAID' %}selected{% endif %}>Paid Leave</option>
+                        <option value="SICK" {% if current_filter.type == 'SICK' %}selected{% endif %}>Sick Leave</option>
+                        <option value="UNPAID" {% if current_filter.type == 'UNPAID' %}selected{% endif %}>Unpaid Leave</option>
+                    </select>
+                </div>
+
+                <!-- Employee Filter -->
+                <div>
+                    <label class="block text-gray-400 text-sm mb-2">Employee</label>
+                    <input type="text" name="employee" value="{{ current_filter.employee }}" 
+                           placeholder="Search by name..."
+                           class="w-full bg-white/10 border border-white/20 rounded-xl px-4 py-2 text-white focus:outline-none focus:border-primary-500">
+                </div>
+
+                <!-- Submit -->
+                <div class="flex items-end gap-2">
+                    <button type="submit" class="flex-1 px-4 py-2 bg-gradient-to-r from-primary-500 to-accent-500 text-white rounded-xl font-semibold hover:shadow-lg hover:shadow-primary-500/50 transition-all">
+                        Apply Filters
+                    </button>
+                    <a href="{{ url_for('time_off_all') }}" class="px-4 py-2 bg-white/10 text-white rounded-xl hover:bg-white/20 transition-all">
+                        Reset
+                    </a>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Leave Requests Table -->
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+        <div class="rounded-2xl p-6 bg-gradient-to-br from-white/10 to-white/5 backdrop-blur-xl border border-white/10 shadow-lg glass-highlight">
+            <h2 class="text-2xl font-bold text-white mb-4">Leave Requests</h2>
+            
+            {% if leave_records %}
+            <div class="overflow-x-auto">
+                <table class="w-full">
+                    <thead class="border-b border-white/20 sticky top-0 bg-slate-800/50">
+                        <tr class="text-left">
+                            <th class="pb-3 text-gray-400 font-semibold">Employee</th>
+                            <th class="pb-3 text-gray-400 font-semibold">Type</th>
+                            <th class="pb-3 text-gray-400 font-semibold">Dates</th>
+                            <th class="pb-3 text-gray-400 font-semibold">Days</th>
+                            <th class="pb-3 text-gray-400 font-semibold">Status</th>
+                            <th class="pb-3 text-gray-400 font-semibold">Applied</th>
+                            <th class="pb-3 text-gray-400 font-semibold text-center">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-white/10">
+                        {% for leave, employee in leave_records %}
+                        <tr class="hover:bg-white/5 transition-colors" id="leave-row-{{ leave.id }}">
+                            <td class="py-4">
+                                <div class="flex items-center gap-3">
+                                    <div class="w-10 h-10 bg-gradient-to-br from-primary-500 to-accent-500 rounded-full flex items-center justify-center text-white font-bold">
+                                        {{ employee.username[0].upper() }}
+                                    </div>
+                                    <div>
+                                        <div class="text-white font-medium">{{ employee.username }}</div>
+                                        <div class="text-gray-400 text-sm">{{ employee.email }}</div>
+                                    </div>
+                                </div>
+                            </td>
+                            <td class="py-4">
+                                <span class="px-3 py-1 rounded-lg text-sm font-medium
+                                    {% if leave.leave_type == 'PAID' %}bg-green-500/20 text-green-300
+                                    {% elif leave.leave_type == 'SICK' %}bg-blue-500/20 text-blue-300
+                                    {% else %}bg-amber-500/20 text-amber-300{% endif %}">
+                                    {{ leave.leave_type }}
+                                    {% if not leave.is_paid %}<span class="text-xs">💰</span>{% endif %}
+                                </span>
+                            </td>
+                            <td class="py-4 text-white">
+                                <div>{{ leave.start_date.strftime('%b %d') }} - {{ leave.end_date.strftime('%b %d, %Y') }}</div>
+                                {% if leave.start_date <= today <= leave.end_date %}
+                                <span class="text-xs text-blue-400">● Currently on leave</span>
+                                {% elif leave.start_date > today %}
+                                <span class="text-xs text-purple-400">Upcoming</span>
+                                {% endif %}
+                            </td>
+                            <td class="py-4 text-white font-semibold">{{ leave.total_days }}</td>
+                            <td class="py-4">
+                                <span class="px-3 py-1 rounded-lg text-sm font-medium
+                                    {% if leave.status == 'PENDING' %}bg-amber-500/20 text-amber-300
+                                    {% elif leave.status == 'APPROVED' %}bg-green-500/20 text-green-300
+                                    {% else %}bg-red-500/20 text-red-300{% endif %}">
+                                    {{ leave.status }}
+                                </span>
+                                {% if leave.is_locked %}
+                                <span class="text-xs text-amber-400" title="Locked for payroll">🔒</span>
+                                {% endif %}
+                            </td>
+                            <td class="py-4 text-gray-400 text-sm">
+                                {{ leave.applied_on.strftime('%b %d, %Y') }}
+                            </td>
+                            <td class="py-4">
+                                <div class="flex items-center justify-center gap-2">
+                                    <button onclick="viewLeaveDetails({{ leave.id }}, '{{ employee.username }}', '{{ leave.leave_type }}', '{{ leave.start_date }}', '{{ leave.end_date }}', {{ leave.total_days }}, '{{ leave.reason | replace('\n', ' ') | replace("'", "\\'") }}', '{{ leave.attachment_file or '' }}')" 
+                                            class="p-2 text-blue-300 hover:text-blue-100 hover:bg-white/10 rounded-lg transition-all" title="View Details">
+                                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path>
+                                        </svg>
+                                    </button>
+                                    
+                                    {% if leave.status == 'PENDING' and not leave.is_locked %}
+                                    <button onclick="approveLeave({{ leave.id }}, '{{ employee.username }}')" 
+                                            class="p-2 text-green-300 hover:text-green-100 hover:bg-white/10 rounded-lg transition-all" title="Approve">
+                                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                                        </svg>
+                                    </button>
+                                    
+                                    <button onclick="rejectLeave({{ leave.id }}, '{{ employee.username }}')" 
+                                            class="p-2 text-red-300 hover:text-red-100 hover:bg-white/10 rounded-lg transition-all" title="Reject">
+                                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                                        </svg>
+                                    </button>
+                                    {% endif %}
+                                </div>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% else %}
+            <div class="text-center py-12">
+                <i class="fas fa-inbox text-gray-400 text-6xl mb-4"></i>
+                <p class="text-gray-300 text-lg">No leave requests found</p>
+                <p class="text-gray-400 text-sm mt-2">No requests match the current filters</p>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<!-- View Details Modal -->
+<div id="detailsModal" class="fixed inset-0 bg-black/50 backdrop-blur-sm hidden items-center justify-center z-50">
+    <div class="bg-slate-800 rounded-2xl p-8 max-w-2xl w-full mx-4 border border-purple-500/30">
+        <div class="flex items-center justify-between mb-6">
+            <h2 class="text-2xl font-bold text-white">Leave Request Details</h2>
+            <button onclick="closeDetailsModal()" class="text-purple-300 hover:text-white">
+                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                </svg>
+            </button>
+        </div>
+
+        <div id="detailsContent" class="space-y-4 text-white">
+            <!-- Content will be populated by JavaScript -->
+        </div>
+    </div>
+</div>
+
+<!-- Approve Modal -->
+<div id="approveModal" class="fixed inset-0 bg-black/50 backdrop-blur-sm hidden items-center justify-center z-50">
+    <div class="bg-slate-800 rounded-2xl p-8 max-w-md w-full mx-4 border border-green-500/30">
+        <h2 class="text-2xl font-bold text-white mb-4">Approve Leave Request</h2>
+        <p class="text-purple-200 mb-6">Approve leave request for <span id="approveEmployeeName" class="font-semibold text-white"></span>?</p>
+        
+        <div class="mb-6">
+            <label class="block text-purple-200 mb-2">Comment (Optional)</label>
+            <textarea id="approveComment" rows="3" 
+                      class="w-full bg-white/10 border border-white/20 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-green-500"
+                      placeholder="Add any notes..."></textarea>
+        </div>
+
+        <div class="flex gap-4">
+            <button onclick="closeApproveModal()" class="flex-1 px-6 py-3 bg-white/10 text-white rounded-xl font-semibold hover:bg-white/20 transition-all">
+                Cancel
+            </button>
+            <button onclick="confirmApprove()" class="flex-1 px-6 py-3 bg-gradient-to-r from-green-500 to-emerald-600 text-white rounded-xl font-semibold hover:shadow-lg hover:shadow-green-500/50 transition-all">
+                Approve
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- Reject Modal -->
+<div id="rejectModal" class="fixed inset-0 bg-black/50 backdrop-blur-sm hidden items-center justify-center z-50">
+    <div class="bg-slate-800 rounded-2xl p-8 max-w-md w-full mx-4 border border-red-500/30">
+        <h2 class="text-2xl font-bold text-white mb-4">Reject Leave Request</h2>
+        <p class="text-purple-200 mb-6">Reject leave request for <span id="rejectEmployeeName" class="font-semibold text-white"></span>?</p>
+        
+        <div class="mb-6">
+            <label class="block text-purple-200 mb-2">Rejection Reason *</label>
+            <textarea id="rejectComment" rows="3" required
+                      class="w-full bg-white/10 border border-white/20 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-red-500"
+                      placeholder="Please provide reason for rejection..."></textarea>
+            <p class="text-xs text-red-300 mt-1">* Rejection reason is mandatory</p>
+        </div>
+
+        <div class="flex gap-4">
+            <button onclick="closeRejectModal()" class="flex-1 px-6 py-3 bg-white/10 text-white rounded-xl font-semibold hover:bg-white/20 transition-all">
+                Cancel
+            </button>
+            <button onclick="confirmReject()" class="flex-1 px-6 py-3 bg-gradient-to-r from-red-500 to-pink-600 text-white rounded-xl font-semibold hover:shadow-lg hover:shadow-red-500/50 transition-all">
+                Reject
+            </button>
+        </div>
+    </div>
+</div>
+
+<script>
+let currentLeaveId = null;
+
+function viewLeaveDetails(id, employee, type, startDate, endDate, days, reason, attachment) {
+    const modal = document.getElementById('detailsModal');
+    const content = document.getElementById('detailsContent');
+    
+    let html = `
+        <div class="grid grid-cols-2 gap-4">
+            <div>
+                <p class="text-purple-200 text-sm">Employee</p>
+                <p class="font-semibold">${employee}</p>
+            </div>
+            <div>
+                <p class="text-purple-200 text-sm">Leave Type</p>
+                <p class="font-semibold">${type}</p>
+            </div>
+            <div>
+                <p class="text-purple-200 text-sm">Start Date</p>
+                <p class="font-semibold">${startDate}</p>
+            </div>
+            <div>
+                <p class="text-purple-200 text-sm">End Date</p>
+                <p class="font-semibold">${endDate}</p>
+            </div>
+            <div>
+                <p class="text-purple-200 text-sm">Total Days</p>
+                <p class="font-semibold">${days} days</p>
+            </div>
+        </div>
+        <div class="mt-4">
+            <p class="text-purple-200 text-sm mb-2">Reason</p>
+            <p class="bg-white/5 rounded-xl p-4">${reason}</p>
+        </div>
+    `;
+    
+    if (attachment) {
+        html += `
+            <div class="mt-4">
+                <p class="text-purple-200 text-sm mb-2">Attachment</p>
+                <a href="/static/uploads/leave_attachments/${attachment}" target="_blank" 
+                   class="inline-flex items-center gap-2 px-4 py-2 bg-blue-500/20 text-blue-300 rounded-lg hover:bg-blue-500/30 transition-all">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                    </svg>
+                    View Attachment
+                </a>
+            </div>
+        `;
+    }
+    
+    content.innerHTML = html;
+    modal.classList.remove('hidden');
+    modal.classList.add('flex');
+}
+
+function closeDetailsModal() {
+    document.getElementById('detailsModal').classList.add('hidden');
+    document.getElementById('detailsModal').classList.remove('flex');
+}
+
+function approveLeave(id, employeeName) {
+    currentLeaveId = id;
+    document.getElementById('approveEmployeeName').textContent = employeeName;
+    document.getElementById('approveModal').classList.remove('hidden');
+    document.getElementById('approveModal').classList.add('flex');
+}
+
+function closeApproveModal() {
+    document.getElementById('approveModal').classList.add('hidden');
+    document.getElementById('approveModal').classList.remove('flex');
+    document.getElementById('approveComment').value = '';
+    currentLeaveId = null;
+}
+
+function confirmApprove() {
+    const comment = document.getElementById('approveComment').value.trim();
+    
+    fetch(`/time-off/approve/${currentLeaveId}`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ comment })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            window.location.reload();
+        } else {
+            alert('Error: ' + data.message);
+        }
+    })
+    .catch(error => {
+        alert('Error approving request: ' + error);
+    });
+}
+
+function rejectLeave(id, employeeName) {
+    currentLeaveId = id;
+    document.getElementById('rejectEmployeeName').textContent = employeeName;
+    document.getElementById('rejectModal').classList.remove('hidden');
+    document.getElementById('rejectModal').classList.add('flex');
+}
+
+function closeRejectModal() {
+    document.getElementById('rejectModal').classList.add('hidden');
+    document.getElementById('rejectModal').classList.remove('flex');
+    document.getElementById('rejectComment').value = '';
+    currentLeaveId = null;
+}
+
+function confirmReject() {
+    const comment = document.getElementById('rejectComment').value.trim();
+    
+    if (!comment) {
+        alert('Please provide a rejection reason');
+        return;
+    }
+    
+    fetch(`/time-off/reject/${currentLeaveId}`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ comment })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            window.location.reload();
+        } else {
+            alert('Error: ' + data.message);
+        }
+    })
+    .catch(error => {
+        alert('Error rejecting request: ' + error);
+    });
+}
+</script>
+
+{% endblock %}

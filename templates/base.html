@@ -433,6 +433,16 @@
                             </a>
                             {% endif %}
                             
+                            <!-- Admin Only - Create HR/Company (placed prominently after Dashboard) -->
+                            {% if session.role == 'Admin' %}
+                            <a href="{{ url_for('signup') }}" 
+                               class="group relative inline-flex items-center gap-2 px-4 py-2 rounded-lg border border-transparent text-purple-300 hover:text-white hover:bg-purple-500/20 transition-all duration-300
+                                      after:content-[''] after:absolute after:left-4 after:right-4 after:bottom-1 after:h-0.5 after:origin-left after:scale-x-0 after:bg-gradient-to-r after:from-purple-500 after:to-pink-500 after:transition-transform after:duration-300 hover:after:scale-x-100
+                                      {% if request.endpoint == 'signup' %}text-purple-400 bg-purple-500/20 border-purple-500/30 shadow-lg{% endif %}">
+                                <i class="fas fa-building text-sm opacity-90 group-hover:scale-110 transition-transform"></i>Create HR/Company
+                            </a>
+                            {% endif %}
+                            
                             <!-- Attendance -->
                             <a href="{{ url_for('attendance') }}" 
                                class="group relative inline-flex items-center gap-2 px-4 py-2 rounded-lg border border-transparent text-gray-300 hover:text-white hover:bg-white/10 transition-all duration-300
@@ -442,31 +452,12 @@
                             </a>
                             
                             <!-- Time Off - Role-based routing -->
-                            {% if session.role in ['Admin', 'HR Officer'] %}
-                            <a href="{{ url_for('leave_management') }}" 
+                            <a href="{{ url_for('time_off_redirect') }}" 
                                class="group relative inline-flex items-center gap-2 px-4 py-2 rounded-lg border border-transparent text-gray-300 hover:text-white hover:bg-white/10 transition-all duration-300
                                       after:content-[''] after:absolute after:left-4 after:right-4 after:bottom-1 after:h-0.5 after:origin-left after:scale-x-0 after:bg-gradient-to-r after:from-primary-500 after:to-accent-500 after:transition-transform after:duration-300 hover:after:scale-x-100
-                                      {% if request.endpoint in ['leave_management', 'approve_leave', 'reject_leave'] %}text-primary-400 bg-primary-500/15 border-primary-500/20 shadow-lg{% endif %}">
+                                      {% if request.endpoint in ['time_off_redirect', 'time_off_me', 'time_off_all', 'request_time_off', 'approve_time_off', 'reject_time_off', 'cancel_time_off'] %}text-primary-400 bg-primary-500/15 border-primary-500/20 shadow-lg{% endif %}">
                                 <i class="fas fa-umbrella-beach text-sm opacity-90 group-hover:scale-110 transition-transform"></i>Time Off
                             </a>
-                            {% else %}
-                            <a href="{{ url_for('my_leave_requests') }}" 
-                               class="group relative inline-flex items-center gap-2 px-4 py-2 rounded-lg border border-transparent text-gray-300 hover:text-white hover:bg-white/10 transition-all duration-300
-                                      after:content-[''] after:absolute after:left-4 after:right-4 after:bottom-1 after:h-0.5 after:origin-left after:scale-x-0 after:bg-gradient-to-r after:from-primary-500 after:to-accent-500 after:transition-transform after:duration-300 hover:after:scale-x-100
-                                      {% if request.endpoint in ['my_leave_requests', 'apply_leave'] %}text-primary-400 bg-primary-500/15 border-primary-500/20 shadow-lg{% endif %}">
-                                <i class="fas fa-umbrella-beach text-sm opacity-90 group-hover:scale-110 transition-transform"></i>Time Off
-                            </a>
-                            {% endif %}
-                            
-                            <!-- Admin/HR Only - User Management -->
-                            {% if session.role in ['Admin', 'HR Officer'] %}
-                            <a href="{{ url_for('signup') }}" 
-                               class="group relative inline-flex items-center gap-2 px-4 py-2 rounded-lg border border-transparent text-gray-300 hover:text-white hover:bg-white/10 transition-all duration-300
-                                      after:content-[''] after:absolute after:left-4 after:right-4 after:bottom-1 after:h-0.5 after:origin-left after:scale-x-0 after:bg-gradient-to-r after:from-primary-500 after:to-accent-500 after:transition-transform after:duration-300 hover:after:scale-x-100
-                                      {% if request.endpoint == 'signup' %}text-primary-400 bg-primary-500/15 border-primary-500/20 shadow-lg{% endif %}">
-                                <i class="fas fa-user-plus text-sm opacity-90 group-hover:scale-110 transition-transform"></i>Create User
-                            </a>
-                            {% endif %}
                             
                             <!-- Profile -->
                             <a href="{{ url_for('profile') }}" 
@@ -482,6 +473,12 @@
                                 <i class="fas fa-sign-out-alt text-sm"></i>Logout
                             </a>
                         {% else %}
+                            <a href="{{ url_for('employee_register') }}" 
+                               class="group relative inline-flex items-center gap-2 px-4 py-2 rounded-lg border border-transparent text-gray-300 hover:text-white hover:bg-white/10 transition-all duration-300
+                                      after:content-[''] after:absolute after:left-4 after:right-4 after:bottom-1 after:h-0.5 after:origin-left after:scale-x-0 after:bg-gradient-to-r after:from-primary-500 after:to-accent-500 after:transition-transform after:duration-300 hover:after:scale-x-100
+                                      {% if request.endpoint == 'employee_register' %}text-primary-400 bg-primary-500/15 border-primary-500/20 shadow-lg{% endif %}">
+                                <i class="fas fa-user-plus text-sm opacity-90 group-hover:scale-110 transition-transform"></i>Register
+                            </a>
                             <a href="{{ url_for('login') }}" 
                                class="group relative inline-flex items-center gap-2 px-4 py-2 rounded-lg border border-transparent text-gray-300 hover:text-white hover:bg-white/10 transition-all duration-300
                                       after:content-[''] after:absolute after:left-4 after:right-4 after:bottom-1 after:h-0.5 after:origin-left after:scale-x-0 after:bg-gradient-to-r after:from-primary-500 after:to-accent-500 after:transition-transform after:duration-300 hover:after:scale-x-100
@@ -534,38 +531,43 @@
                               {% if request.endpoint == 'attendance' %}text-primary-400 bg-primary-500/15 border-primary-500{% endif %}">
                         <i class="fas fa-calendar-check mr-3 text-primary-400 group-hover:scale-110 transition-transform"></i>Attendance
                     </a>
-                    {% if session.role in ['Admin', 'HR Officer'] %}
-                    <a href="{{ url_for('leave_management') }}" 
+                    <a href="{{ url_for('time_off_redirect') }}" 
                        class="group block px-4 py-3 rounded-xl border-l-4 border-transparent text-gray-300 hover:text-white hover:bg-white/10 transition-all duration-300
-                              {% if request.endpoint in ['leave_management', 'approve_leave', 'reject_leave'] %}text-primary-400 bg-primary-500/15 border-primary-500{% endif %}">
+                              {% if request.endpoint in ['time_off_redirect', 'time_off_me', 'time_off_all', 'request_time_off', 'approve_time_off', 'reject_time_off', 'cancel_time_off'] %}text-primary-400 bg-primary-500/15 border-primary-500{% endif %}">
                         <i class="fas fa-umbrella-beach mr-3 text-primary-400 group-hover:scale-110 transition-transform"></i>Time Off
                     </a>
-                    {% else %}
-                    <a href="{{ url_for('my_leave_requests') }}" 
-                       class="group block px-4 py-3 rounded-xl border-l-4 border-transparent text-gray-300 hover:text-white hover:bg-white/10 transition-all duration-300
-                              {% if request.endpoint in ['my_leave_requests', 'apply_leave'] %}text-primary-400 bg-primary-500/15 border-primary-500{% endif %}">
-                        <i class="fas fa-umbrella-beach mr-3 text-primary-400 group-hover:scale-110 transition-transform"></i>Time Off
-                    </a>
-                    {% endif %}
                     <a href="{{ url_for('profile') }}" 
                        class="group block px-4 py-3 rounded-xl border-l-4 border-transparent text-gray-300 hover:text-white hover:bg-white/10 transition-all duration-300
                               {% if request.endpoint == 'profile' %}text-primary-400 bg-primary-500/15 border-primary-500{% endif %}">
                         <i class="fas fa-user mr-3 text-primary-400 group-hover:scale-110 transition-transform"></i>Profile
                     </a>
+                    
+                    <!-- Admin Section -->
+                    {% if session.role == 'Admin' %}
+                    <div class="my-3 px-4 py-2 text-xs font-semibold text-gray-500 uppercase tracking-wider border-t border-white/10 pt-4">
+                        Admin
+                    </div>
+                    <a href="{{ url_for('signup') }}" 
+                       class="group block px-4 py-3 rounded-xl border-l-4 border-transparent text-gray-300 hover:text-white hover:bg-white/10 transition-all duration-300
+                              {% if request.endpoint == 'signup' %}text-primary-400 bg-primary-500/15 border-primary-500{% endif %}">
+                        <i class="fas fa-user-plus mr-3 text-primary-400 group-hover:scale-110 transition-transform"></i>Create HR/Company
+                    </a>
+                    {% endif %}
+                    
                     <a href="{{ url_for('logout') }}" 
                        class="group block px-4 py-3 rounded-xl border-l-4 border-transparent text-red-400 hover:text-red-300 hover:bg-red-500/10 transition-all duration-300">
                         <i class="fas fa-sign-out-alt mr-3"></i>Logout
                     </a>
                 {% else %}
+                    <a href="{{ url_for('employee_register') }}" 
+                       class="group block px-4 py-3 rounded-xl border-l-4 border-transparent text-gray-300 hover:text-white hover:bg-white/10 transition-all duration-300
+                              {% if request.endpoint == 'employee_register' %}text-primary-400 bg-primary-500/15 border-primary-500{% endif %}">
+                        <i class="fas fa-user-plus mr-3 text-primary-400 group-hover:scale-110 transition-transform"></i>Register
+                    </a>
                     <a href="{{ url_for('login') }}" 
                        class="group block px-4 py-3 rounded-xl border-l-4 border-transparent text-gray-300 hover:text-white hover:bg-white/10 transition-all duration-300
                               {% if request.endpoint == 'login' %}text-primary-400 bg-primary-500/15 border-primary-500{% endif %}">
                         <i class="fas fa-sign-in-alt mr-3 text-primary-400 group-hover:scale-110 transition-transform"></i>Login
-                    </a>
-                    <a href="{{ url_for('signup') }}" 
-                       class="group block px-4 py-3 rounded-xl border-l-4 border-transparent text-gray-300 hover:text-white hover:bg-white/10 transition-all duration-300
-                              {% if request.endpoint == 'signup' %}text-primary-400 bg-primary-500/15 border-primary-500{% endif %}">
-                        <i class="fas fa-user-plus mr-3 text-primary-400 group-hover:scale-110 transition-transform"></i>Sign Up
                     </a>
                 {% endif %}
             </div>
