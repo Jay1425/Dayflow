@@ -21,7 +21,9 @@ from dotenv import load_dotenv
 load_dotenv()
 
 app = Flask(__name__)
-app.secret_key = os.getenv('SECRET_KEY', 'fdbdfnhbidfhibfhijmhikwsgoihgepwsofbfgbjfghnirfhsjr')
+app.secret_key = os.getenv('SECRET_KEY') or os.urandom(32)
+if os.getenv('FLASK_ENV') == 'production' and not os.getenv('SECRET_KEY'):
+    raise RuntimeError('SECRET_KEY must be configured in production')
 
 # Company Configuration
 COMPANY_CODE = os.getenv('COMPANY_CODE', 'DF')  # Dayflow company code
